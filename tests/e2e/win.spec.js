@@ -46,6 +46,17 @@ test('finishes itself, runs the cascade and offers another deal', async ({ page 
   expect((await gameState(page)).status).toBe('won')
   await expect(page.locator('#status-message')).toHaveText('You win!')
 
+  // The cascade renders below the display's pixel ratio on purpose: its canvas and the card
+  // bitmaps it blits both cost memory in proportion to this, and none of it is visible on
+  // artwork moving this fast.
+  const scale = await page.evaluate(() => {
+    const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('cascade'))
+    const board = /** @type {HTMLElement} */ (document.getElementById('board'))
+    return canvas.width / board.getBoundingClientRect().width
+  })
+  expect(scale).toBeGreaterThan(0)
+  expect(scale).toBeLessThanOrEqual(1.5 + 0.01)
+
   // The cascade runs until it is interrupted, exactly as the original did.
   await page.locator('#board').click({ position: { x: 20, y: 20 } })
   await expect(page.locator('#board')).not.toHaveClass(/board--cascading/)
