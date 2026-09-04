@@ -107,7 +107,6 @@
   pointer-events: auto;
   transform: translate3d(var(--x), var(--y), 0);
   transition: transform var(--deal-ms, 180ms) ease-out;
-  will-change: transform;
 }
 
 .card__face {
@@ -138,6 +137,8 @@
 .card--dragging {
   /* Follow the finger exactly: an animated card lags behind and feels broken. */
   transition: none;
+  /* Promoted only while it is actually moving: 52 permanent layers cost real GPU memory. */
+  will-change: transform;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), calc(var(--card-w) * 0.06) calc(var(--card-w) * 0.08) 0 rgb(0 0 0 / 0.3);
 }
 
