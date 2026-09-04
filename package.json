@@ -1,0 +1,33 @@
+{
+  "name": "solexe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SOL.EXE - a faithful web clone of Windows Solitaire. Installable, offline, and playable on desktop and mobile.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc -p jsconfig.json",
+    "assets": "npm run assets:cards && npm run assets:backs && npm run assets:icons",
+    "assets:cards": "node scripts/build-cards.mjs",
+    "assets:backs": "node scripts/build-backs.mjs",
+    "assets:icons": "node scripts/build-icons.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^26.4.1",
+    "pngjs": "^7.0.0",
+    "svgo": "^3.3.2",
+    "typescript": "^5.7.0",
+    "vite": "^6.4.3",
+    "vite-plugin-pwa": "^0.21.0",
+    "vitest": "^3.2.7"
+  }
+}

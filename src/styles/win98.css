@@ -1,0 +1,383 @@
+/*
+ * The Windows 95/98 shell: the raised-and-sunken grey world the game lives in.
+ *
+ * The whole look is built from 1px borders rather than images, so it stays crisp at any
+ * device pixel ratio and costs nothing to load.
+ */
+
+:root {
+  --face: #c0c0c0;
+  --face-light: #dfdfdf;
+  --highlight: #ffffff;
+  --shadow: #808080;
+  --dark: #000000;
+  --title-from: #000080;
+  --title-to: #1084d0;
+  --title-text: #ffffff;
+  --felt: #008000;
+  --felt-dark: #006400;
+  --selection: #000080;
+
+  --chrome-font: Tahoma, "MS Sans Serif", Geneva, Verdana, sans-serif;
+  --chrome-size: 11px;
+}
+
+/* The two bevels every Windows control is made of. */
+.raised {
+  border: 1px solid;
+  border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
+  box-shadow: inset 1px 1px 0 var(--face-light), inset -1px -1px 0 var(--shadow);
+}
+
+.sunken {
+  border: 1px solid;
+  border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
+  box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--face-light);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--face);
+  color: var(--dark);
+  font: var(--chrome-size) / 1.4 var(--chrome-font);
+  /* The board is a direct-manipulation surface; browser text selection only gets in the way. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+/* --- Title bar ------------------------------------------------------------------------ */
+
+.titlebar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 2px 2px 3px;
+  background: linear-gradient(90deg, var(--title-from), var(--title-to));
+  color: var(--title-text);
+  font-weight: bold;
+}
+
+.titlebar__icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+}
+
+.titlebar__text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.titlebar__buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.titlebar__button {
+  position: relative;
+  width: 16px;
+  height: 14px;
+  background: var(--face);
+  border: 1px solid;
+  border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
+}
+
+/* The glyphs are drawn rather than typed so they line up on the pixel grid. */
+.titlebar__button::before,
+.titlebar__button::after {
+  content: "";
+  position: absolute;
+  background: var(--dark);
+}
+
+.titlebar__button--minimise::before {
+  inset: auto 3px 2px 3px;
+  height: 2px;
+}
+
+.titlebar__button--maximise::before {
+  inset: 2px 2px 2px 2px;
+  border: 1px solid var(--dark);
+  border-top-width: 2px;
+  background: none;
+}
+
+.titlebar__button--close::before,
+.titlebar__button--close::after {
+  top: 5px;
+  left: 3px;
+  width: 8px;
+  height: 2px;
+}
+
+.titlebar__button--close::before {
+  transform: rotate(45deg);
+}
+
+.titlebar__button--close::after {
+  transform: rotate(-45deg);
+}
+
+/* --- Menu bar -------------------------------------------------------------------------- */
+
+.menubar {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--face);
+  border-bottom: 1px solid var(--shadow);
+}
+
+.menubar__button {
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+.menubar__button[aria-expanded="true"] {
+  background: var(--selection);
+  color: var(--highlight);
+}
+
+.menu {
+  position: absolute;
+  z-index: 100;
+  min-width: 172px;
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  background: var(--face);
+  border: 1px solid;
+  border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
+  box-shadow: inset 1px 1px 0 var(--face-light), inset -1px -1px 0 var(--shadow), 2px 2px 0 rgb(0 0 0 / 0.35);
+}
+
+.menu__item {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px 18px 3px 22px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.menu__item:hover:not(:disabled),
+.menu__item:focus-visible {
+  background: var(--selection);
+  color: var(--highlight);
+  outline: none;
+}
+
+.menu__item:disabled {
+  color: var(--shadow);
+  text-shadow: 1px 1px 0 var(--highlight);
+}
+
+.menu__item[aria-checked="true"]::before {
+  content: "•";
+  position: absolute;
+  margin-left: -14px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.menu__shortcut {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.menu__separator {
+  height: 0;
+  margin: 3px 2px;
+  border-top: 1px solid var(--shadow);
+  border-bottom: 1px solid var(--highlight);
+}
+
+/* --- Status bar ------------------------------------------------------------------------ */
+
+.statusbar {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px;
+  background: var(--face);
+}
+
+.statusbar[hidden] {
+  display: none;
+}
+
+.statusbar__cell {
+  min-width: 92px;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusbar__cell--wide {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*
+ * A phone on its side has very little height to spare, and every pixel the chrome gives back
+ * goes straight into the size of the cards.
+ */
+@media (max-height: 520px) {
+  .titlebar {
+    padding: 1px 1px 1px 2px;
+  }
+
+  .titlebar__icon,
+  .titlebar__button {
+    height: 12px;
+  }
+
+  .titlebar__icon {
+    width: 12px;
+  }
+
+  .titlebar__button {
+    width: 14px;
+  }
+
+  .menubar__button {
+    padding: 1px 8px;
+  }
+
+  .statusbar {
+    padding: 1px;
+  }
+
+  .statusbar__cell {
+    padding: 0 6px;
+  }
+}
+
+/* --- Buttons and dialogs --------------------------------------------------------------- */
+
+.button {
+  min-width: 75px;
+  padding: 4px 12px;
+  background: var(--face);
+  color: inherit;
+  font: inherit;
+  border: 1px solid;
+  border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
+  box-shadow: inset 1px 1px 0 var(--face-light), inset -1px -1px 0 var(--shadow);
+  cursor: default;
+}
+
+.button:active:not(:disabled) {
+  border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
+  box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--face-light);
+  padding: 5px 11px 3px 13px;
+}
+
+.button:focus-visible {
+  outline: 1px dotted var(--dark);
+  outline-offset: -4px;
+}
+
+.dialog {
+  padding: 0;
+  border: 1px solid;
+  border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
+  box-shadow: inset 1px 1px 0 var(--face-light), inset -1px -1px 0 var(--shadow);
+  background: var(--face);
+  color: inherit;
+  font: inherit;
+  max-width: min(92vw, 420px);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+
+.dialog__body {
+  padding: 12px;
+}
+
+.dialog__footer {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding: 0 12px 12px;
+}
+
+.fieldset {
+  margin: 0 0 10px;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--shadow);
+  box-shadow: 1px 1px 0 var(--highlight) inset, -1px -1px 0 var(--highlight);
+}
+
+.fieldset legend {
+  padding: 0 4px;
+}
+
+.field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.field input {
+  margin: 0;
+  accent-color: var(--title-from);
+}
+
+.field label,
+.field input {
+  cursor: default;
+}
+
+.stats {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats th,
+.stats td {
+  padding: 3px 8px 3px 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+.stats td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,10 @@
+.DS_STORE
+Thumbs.db
+/.claude/
+/node_modules/
+/tmp/
+/dist/
+/dev-dist/
+/test-results/
+/playwright-report/
+/blob-report/

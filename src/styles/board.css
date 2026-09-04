@@ -1,0 +1,160 @@
+/*
+ * The playfield: a sunken green well holding absolutely positioned piles and cards.
+ *
+ * Every position is written by `layout.js` into custom properties, so nothing here needs to
+ * know how big a card is -- and the same rules hold for a phone in portrait and a desktop.
+ */
+
+.board {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--felt);
+  border: 1px solid;
+  border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
+  /* The board is dragged on, so the browser must not claim the gesture for scrolling. */
+  touch-action: none;
+}
+
+.board:focus {
+  outline: none;
+}
+
+.board__piles,
+.board__cards {
+  position: absolute;
+  inset: 0;
+}
+
+.board__cards {
+  /* Cards sit above the empty-pile outlines but must not eat clicks aimed at a pile. */
+  pointer-events: none;
+}
+
+.board__cascade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.board--cascading .board__cascade {
+  visibility: visible;
+}
+
+/* Resizing the window is not a move, so the cards must not slide into their new places. */
+.board--instant .card {
+  transition: none;
+}
+
+/* Hide the real cards while the win cascade paints its own copies. */
+.board--cascading .board__cards {
+  visibility: hidden;
+}
+
+/* --- Pile outlines --------------------------------------------------------------------- */
+
+.pile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--card-w);
+  height: var(--card-h);
+  border: 1px solid rgb(255 255 255 / 0.45);
+  border-radius: calc(var(--card-w) * 0.06);
+  transform: translate3d(var(--x), var(--y), 0);
+}
+
+/* The stock is a button: tapping the empty outline turns the waste back over. */
+.pile--stock {
+  cursor: pointer;
+}
+
+.pile--stock.pile--recyclable::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border: calc(var(--card-w) * 0.045) solid rgb(255 255 255 / 0.55);
+  border-radius: 50%;
+  /* A gap in the ring reads as the classic "turn the deck over" arrow at any size. */
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 62% 62%, 62% 100%, 0 100%);
+}
+
+.pile--stock.pile--dead {
+  border-style: dashed;
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+.pile--drop {
+  border-color: rgb(255 255 255 / 0.95);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.35);
+}
+
+/* --- Cards ----------------------------------------------------------------------------- */
+
+.card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: calc(var(--card-w) * 0.06);
+  background-color: #ffffff;
+  background-image: var(--card-back);
+  background-size: 100% 100%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55);
+  pointer-events: auto;
+  transform: translate3d(var(--x), var(--y), 0);
+  transition: transform var(--deal-ms, 180ms) ease-out;
+  will-change: transform;
+}
+
+.card__face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.card--down .card__face {
+  visibility: hidden;
+}
+
+.card--down {
+  /* Pixel-art backs must stay crisp when the card is scaled up on a large display. */
+  image-rendering: pixelated;
+}
+
+.card--playable {
+  cursor: pointer;
+}
+
+.card--selected {
+  box-shadow: 0 0 0 2px #ffff00, 0 0 0 3px rgb(0 0 0 / 0.55);
+}
+
+.card--dragging {
+  /* Follow the finger exactly: an animated card lags behind and feels broken. */
+  transition: none;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55), calc(var(--card-w) * 0.06) calc(var(--card-w) * 0.08) 0 rgb(0 0 0 / 0.3);
+}
+
+/* "Outline dragging" in the Options dialog: move a wireframe instead of the cards. */
+.card--ghost {
+  background-image: none;
+  background-color: transparent;
+  border: 2px solid rgb(255 255 255 / 0.9);
+  box-shadow: none;
+}
+
+.card--ghost .card__face {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition-duration: 1ms;
+  }
+}

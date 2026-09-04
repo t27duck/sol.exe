@@ -1,0 +1,41 @@
+/*
+ * The Select Card Back dialog: the eight decks laid out as pickable thumbnails.
+ */
+
+.decks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .decks {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.decks__option {
+  position: relative;
+  padding: 0;
+  border: 2px solid transparent;
+  background: none;
+  cursor: default;
+  line-height: 0;
+}
+
+.decks__option img {
+  width: 100%;
+  aspect-ratio: 71 / 96;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.55);
+  image-rendering: pixelated;
+}
+
+.decks__option[aria-checked="true"] {
+  border-color: var(--selection);
+}
+
+.decks__option:focus-visible {
+  outline: 1px dotted var(--dark);
+  outline-offset: 2px;
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Klondike solitaire, the way Windows played it. Installable and playable offline." />
+    <meta name="theme-color" content="#008000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SOL.EXE" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <title>Solitaire</title>
+  </head>
+  <body>
+    <div class="window">
+      <div class="titlebar">
+        <img class="titlebar__icon" src="./favicon.svg" alt="" width="16" height="16" />
+        <span class="titlebar__text">Solitaire</span>
+        <span class="titlebar__buttons" aria-hidden="true">
+          <span class="titlebar__button titlebar__button--minimise"></span>
+          <span class="titlebar__button titlebar__button--maximise"></span>
+          <span class="titlebar__button titlebar__button--close"></span>
+        </span>
+      </div>
+
+      <nav class="menubar" id="menubar" role="menubar" aria-label="Main menu"></nav>
+
+      <main class="board" id="board" role="application" aria-label="Solitaire board" tabindex="-1">
+        <div class="board__piles" id="piles"></div>
+        <div class="board__cards" id="cards"></div>
+        <canvas class="board__cascade" id="cascade" aria-hidden="true"></canvas>
+      </main>
+
+      <div class="statusbar" id="statusbar">
+        <span class="statusbar__cell" id="status-score"></span>
+        <span class="statusbar__cell" id="status-time"></span>
+        <span class="statusbar__cell statusbar__cell--wide" id="status-message"></span>
+      </div>
+    </div>
+
+    <div id="dialogs"></div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
