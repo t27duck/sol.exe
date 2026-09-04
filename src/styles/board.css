@@ -71,19 +71,27 @@
   cursor: pointer;
 }
 
-.pile--stock.pile--recyclable::after {
+/*
+ * What the empty deck is telling you: a circular arrow when the waste can be turned back over,
+ * and a crossed circle when Vegas has run you out of passes. Both are vector art, so they stay
+ * sharp whatever size the cards end up.
+ */
+.pile--stock.pile--recyclable::after,
+.pile--stock.pile--dead::after {
   content: "";
   position: absolute;
-  inset: 22%;
-  border: calc(var(--card-w) * 0.045) solid rgb(255 255 255 / 0.55);
-  border-radius: 50%;
-  /* A gap in the ring reads as the classic "turn the deck over" arrow at any size. */
-  clip-path: polygon(0 0, 100% 0, 100% 62%, 62% 62%, 62% 100%, 0 100%);
+  inset: 20%;
+  background: center / contain no-repeat;
 }
 
-.pile--stock.pile--dead {
-  border-style: dashed;
-  border-color: rgb(255 255 255 / 0.25);
+.pile--stock.pile--recyclable::after {
+  background-image: url("../assets/ui/redeal.svg");
+  opacity: 0.6;
+}
+
+.pile--stock.pile--dead::after {
+  background-image: url("../assets/ui/no-redeal.svg");
+  opacity: 0.35;
 }
 
 .pile--drop {

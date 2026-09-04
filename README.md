@@ -59,8 +59,9 @@ that saves, redraws and checks for a win.
 
 ### Card art
 
-The artwork in `src/assets/` is generated and committed, so a normal build never touches the
-reference files. Regenerate it only if the reference art in `tmp/reference/` changes:
+The card faces, card backs and icon in `src/assets/` are generated and committed, so a normal
+build never touches the reference files. Regenerate them only if the reference art in
+`tmp/reference/` changes:
 
 ```sh
 npm run assets
@@ -72,6 +73,10 @@ npm run assets
   one rectangle per run of colour, so they stay sharp at any size instead of blurring.
 - **Icons** (`src/assets/icon.svg`, `public/icons/`) come from the original 24×31 icon the same
   way, with the PNG sizes a web app manifest needs written at whole-number scales.
+
+`src/assets/ui/` is the exception: those few marks — the arrow on the empty deck, and the
+crossed circle for a Vegas game that has run out of passes — are hand-written SVG, not
+generated, and `npm run assets` leaves them alone.
 
 ## Playing
 

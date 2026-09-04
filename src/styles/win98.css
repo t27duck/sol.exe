@@ -19,7 +19,19 @@
   --selection: #000080;
 
   --chrome-font: Tahoma, "MS Sans Serif", Geneva, Verdana, sans-serif;
-  --chrome-size: 11px;
+
+  /*
+   * The cards grow with the window, so chrome pinned at Windows' original 11px looks like a
+   * postage stamp beside them on a large display -- and is a poor tap target.
+   *
+   * This tracks the cards rather than the viewport: `100vw / 7.96` is the width a card gets
+   * from `layout.js`, and the 170px ceiling is the same one the cards stop growing at, so the
+   * shell and the board stay in proportion and stop growing together. The floor is the
+   * original 11px, which is where a phone stays -- there the height is worth more as cards.
+   *
+   * Everything in this file is sized in `em` from here, so the whole shell scales with it.
+   */
+  --chrome-size: max(11px, calc(min(12.56vw, 170px) * 0.09));
 }
 
 /* The two bevels every Windows control is made of. */
@@ -37,6 +49,12 @@
 
 * {
   box-sizing: border-box;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 html,
@@ -68,8 +86,8 @@ body {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 4px;
-  padding: 2px 2px 2px 3px;
+  gap: 0.36em;
+  padding: 0.18em 0.18em 0.18em 0.27em;
   background: linear-gradient(90deg, var(--title-from), var(--title-to));
   color: var(--title-text);
   font-weight: bold;
@@ -77,8 +95,8 @@ body {
 
 .titlebar__icon {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 1.45em;
+  height: 1.45em;
   image-rendering: pixelated;
 }
 
@@ -91,13 +109,13 @@ body {
 
 .titlebar__buttons {
   display: flex;
-  gap: 2px;
+  gap: 0.18em;
 }
 
 .titlebar__button {
   position: relative;
-  width: 16px;
-  height: 14px;
+  width: 1.45em;
+  height: 1.27em;
   background: var(--face);
   border: 1px solid;
   border-color: var(--highlight) var(--dark) var(--dark) var(--highlight);
@@ -112,23 +130,23 @@ body {
 }
 
 .titlebar__button--minimise::before {
-  inset: auto 3px 2px 3px;
-  height: 2px;
+  inset: auto 0.27em 0.18em 0.27em;
+  height: max(2px, 0.18em);
 }
 
 .titlebar__button--maximise::before {
-  inset: 2px 2px 2px 2px;
+  inset: 0.18em;
   border: 1px solid var(--dark);
-  border-top-width: 2px;
+  border-top-width: max(2px, 0.18em);
   background: none;
 }
 
 .titlebar__button--close::before,
 .titlebar__button--close::after {
-  top: 5px;
-  left: 3px;
-  width: 8px;
-  height: 2px;
+  top: calc(50% - max(1px, 0.09em));
+  left: 0.27em;
+  width: 0.73em;
+  height: max(2px, 0.18em);
 }
 
 .titlebar__button--close::before {
@@ -149,7 +167,7 @@ body {
 }
 
 .menubar__button {
-  padding: 3px 8px;
+  padding: 0.28em 0.73em;
   border: 1px solid transparent;
   background: none;
   color: inherit;
@@ -165,9 +183,9 @@ body {
 .menu {
   position: absolute;
   z-index: 100;
-  min-width: 172px;
+  min-width: 15.6em;
   margin: 0;
-  padding: 2px;
+  padding: 0.2em;
   list-style: none;
   background: var(--face);
   border: 1px solid;
@@ -177,11 +195,11 @@ body {
 
 .menu__item {
   display: flex;
-  gap: 16px;
+  gap: 1.5em;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 3px 18px 3px 22px;
+  padding: 0.28em 1.6em 0.28em 2em;
   border: 0;
   background: none;
   color: inherit;
@@ -205,8 +223,8 @@ body {
 .menu__item[aria-checked="true"]::before {
   content: "•";
   position: absolute;
-  margin-left: -14px;
-  font-size: 14px;
+  margin-left: -1.3em;
+  font-size: 1.25em;
   line-height: 1;
 }
 
@@ -217,7 +235,7 @@ body {
 
 .menu__separator {
   height: 0;
-  margin: 3px 2px;
+  margin: 0.28em 0.2em;
   border-top: 1px solid var(--shadow);
   border-bottom: 1px solid var(--highlight);
 }
@@ -227,8 +245,8 @@ body {
 .statusbar {
   display: flex;
   flex: 0 0 auto;
-  gap: 2px;
-  padding: 2px;
+  gap: 0.2em;
+  padding: 0.2em;
   background: var(--face);
 }
 
@@ -237,8 +255,8 @@ body {
 }
 
 .statusbar__cell {
-  min-width: 92px;
-  padding: 2px 6px;
+  min-width: 8.4em;
+  padding: 0.2em 0.55em;
   border: 1px solid;
   border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
   white-space: nowrap;
@@ -257,40 +275,40 @@ body {
  */
 @media (max-height: 520px) {
   .titlebar {
-    padding: 1px 1px 1px 2px;
+    padding: 0.09em 0.09em 0.09em 0.18em;
   }
 
   .titlebar__icon,
   .titlebar__button {
-    height: 12px;
+    height: 1.1em;
   }
 
   .titlebar__icon {
-    width: 12px;
+    width: 1.1em;
   }
 
   .titlebar__button {
-    width: 14px;
+    width: 1.27em;
   }
 
   .menubar__button {
-    padding: 1px 8px;
+    padding: 0.09em 0.73em;
   }
 
   .statusbar {
-    padding: 1px;
+    padding: 0.09em;
   }
 
   .statusbar__cell {
-    padding: 0 6px;
+    padding: 0 0.55em;
   }
 }
 
 /* --- Buttons and dialogs --------------------------------------------------------------- */
 
 .button {
-  min-width: 75px;
-  padding: 4px 12px;
+  min-width: 6.8em;
+  padding: 0.36em 1.1em;
   background: var(--face);
   color: inherit;
   font: inherit;
@@ -303,12 +321,12 @@ body {
 .button:active:not(:disabled) {
   border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
   box-shadow: inset 1px 1px 0 var(--dark), inset -1px -1px 0 var(--face-light);
-  padding: 5px 11px 3px 13px;
+  padding: 0.45em 1em 0.27em 1.2em;
 }
 
 .button:focus-visible {
   outline: 1px dotted var(--dark);
-  outline-offset: -4px;
+  outline-offset: -0.36em;
 }
 
 .dialog {
@@ -319,7 +337,7 @@ body {
   background: var(--face);
   color: inherit;
   font: inherit;
-  max-width: min(92vw, 420px);
+  max-width: min(92vw, 34em);
 }
 
 .dialog::backdrop {
@@ -327,35 +345,38 @@ body {
 }
 
 .dialog__body {
-  padding: 12px;
+  padding: 1.1em;
 }
 
 .dialog__footer {
   display: flex;
-  gap: 6px;
+  gap: 0.55em;
   justify-content: flex-end;
-  padding: 0 12px 12px;
+  padding: 0 1.1em 1.1em;
 }
 
 .fieldset {
-  margin: 0 0 10px;
-  padding: 8px 10px 10px;
+  margin: 0 0 0.9em;
+  padding: 0.73em 0.9em 0.9em;
   border: 1px solid var(--shadow);
   box-shadow: 1px 1px 0 var(--highlight) inset, -1px -1px 0 var(--highlight);
 }
 
 .fieldset legend {
-  padding: 0 4px;
+  padding: 0 0.36em;
 }
 
 .field {
   display: flex;
-  gap: 6px;
+  gap: 0.55em;
   align-items: center;
-  padding: 3px 0;
+  padding: 0.28em 0;
 }
 
 .field input {
+  /* Checkboxes and radios keep their own size unless told otherwise. */
+  width: 1.1em;
+  height: 1.1em;
   margin: 0;
   accent-color: var(--title-from);
 }
@@ -372,7 +393,7 @@ body {
 
 .stats th,
 .stats td {
-  padding: 3px 8px 3px 0;
+  padding: 0.28em 0.73em 0.28em 0;
   text-align: left;
   font-weight: normal;
 }
