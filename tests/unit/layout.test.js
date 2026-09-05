@@ -67,9 +67,14 @@ describe.each(VIEWPORTS)('layout at $name ($width x $height)', ({ width, height 
   })
 
   it('leaves enough of a covered card showing to read its corner', () => {
-    // The longest column is the only one squeezed this hard, and even then the rank must show.
+    // Below about a tenth of the card height the corner index is cut into illegibility, so the
+    // reserve is set to hold that line through the depths real games reach. Only a column longer
+    // than any of the four hundred deals measured goes under it, and never below 8%.
+    const deep = computeLayout(width, height, tableauWith(3, 10)) // 11.26 steps, the p90 game
+    expect(deep.fanUp).toBeGreaterThan(deep.cardH * 0.1 - EPSILON)
+
     const longest = layouts[layouts.length - 1]
-    expect(longest.fanUp).toBeGreaterThan(longest.cardH * 0.05 - EPSILON)
+    expect(longest.fanUp).toBeGreaterThan(longest.cardH * 0.08 - EPSILON)
     expect(dealt.fanUp).toBeGreaterThan(dealt.cardH * 0.12 - EPSILON)
   })
 })

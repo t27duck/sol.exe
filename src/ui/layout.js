@@ -22,7 +22,7 @@ const PAD_Y = 0.1 // of card height
 const ROW_GAP = 0.22 // of card height, between the top row and the tableau
 const FAN_UP_MAX = 0.5 // of card height
 const FAN_UP_MIN = 0.12 // the fan a reserve-length column is guaranteed room for
-const FAN_UP_FLOOR = 0.05 // and the tightest a longer column may squeeze itself
+const FAN_UP_FLOOR = 0.08 // and the tightest a longer column may squeeze itself
 const FAN_DOWN_SHARE = 0.42 // a face-down card takes this share of a face-up card's step
 const WASTE_FAN = 0.3
 
@@ -42,8 +42,17 @@ const MIN_CARD_W = 26
  * against the tallest column as it stands would mean every card on the board resized the moment
  * one column outgrew it, and resized back when it was cleared. So the reserve is a constant, and
  * a column that outgrows it tightens its own fan instead. Only the viewport moves the cards.
+ *
+ * Which makes the number matter: past the reserve, every extra card comes out of the fan, and a
+ * covered card has to show enough of itself to be read. Two measurements set it. Playing four
+ * hundred deals out, the deepest column of a game runs to ten steps in the median game and
+ * eleven and a half at the ninetieth percentile; and a covered card needs about a tenth of its
+ * height showing before the corner index is cut into illegibility. Eleven keeps all but the
+ * rarest games above that line, and costs about an eighth of the card size on a board that is
+ * short enough to be the binding constraint (a wide desktop window; phones are limited by their
+ * width instead, and pay nothing for it).
  */
-const RESERVE_STEPS = 7
+const RESERVE_STEPS = 11
 
 /**
  * @typedef {object} Layout
