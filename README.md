@@ -53,8 +53,7 @@ src/engine/   the rules, scoring and undo. No DOM, no browser APIs; this is what
               tests exercise.
 src/ui/       rendering, pointer handling, menus and dialogs.
 src/state/    local storage: options, statistics, and the game in progress.
-src/assets/   generated card art (see below).
-scripts/      the one-off tools that produced src/assets.
+src/assets/   the card art (see below).
 ```
 
 Every change to a game goes through `apply()` in `src/ui/app.js`, which is the single place
@@ -62,24 +61,25 @@ that saves, redraws and checks for a win.
 
 ### Card art
 
-The card faces, card backs and icon in `src/assets/` are generated and committed, so a normal
-build never touches the reference files. Regenerate them only if the reference art in
-`tmp/reference/` changes:
+`src/assets/` is the source of truth for the artwork. It is committed, and nothing in the build
+regenerates it — edit an SVG there and the change ships.
 
-```sh
-npm run assets
-```
+- **Faces** (`src/assets/cards/`), one file per card, were split out of a public-domain sheet of
+  54 cards laid out 9 across and 6 down, in the order spades A–K, hearts, clubs, diamonds, then
+  two unused jokers. Each occupies a 750×1050 box and is drawn entirely in paths, with no text
+  and no fonts, so a card file is self-contained.
+- **Backs** (`src/assets/backs/`) are the eight original designs. Each is a 71×96 grid of flat
+  colour, redrawn as one SVG path per colour so it scales to any size without blurring rather
+  than being an upscaled bitmap.
+- **Icons** (`src/assets/icon.svg`, `public/icons/`) come from the original 24×31 pixel icon the
+  same way. The PNG sizes the web app manifest needs are whole-number scales of it, which is
+  what keeps the pixels square.
+- **`src/assets/ui/`** holds the two hand-drawn marks: the arrow on the empty deck, and the
+  crossed circle for a Vegas game that has run out of passes.
 
-- **Faces** (`src/assets/cards/`) are split out of a public-domain sheet of 54 cards, one file
-  per card, and optimised.
-- **Backs** (`src/assets/backs/`) are the original 71×96 pixel-art designs, rebuilt as SVG with
-  one rectangle per run of colour, so they stay sharp at any size instead of blurring.
-- **Icons** (`src/assets/icon.svg`, `public/icons/`) come from the original 24×31 icon the same
-  way, with the PNG sizes a web app manifest needs written at whole-number scales.
-
-`src/assets/ui/` is the exception: those few marks — the arrow on the empty deck, and the
-crossed circle for a Vegas game that has run out of passes — are hand-written SVG, not
-generated, and `npm run assets` leaves them alone.
+The one-off tools that originally produced these files are no longer in the tree — they needed
+reference art that was never committed, so they could not be run from a clone. They are still in
+the history if the derivation is ever wanted: `git log --diff-filter=D -- scripts/`.
 
 ## Playing
 
