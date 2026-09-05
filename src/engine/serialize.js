@@ -48,7 +48,7 @@ function decodePile(value) {
 
 /**
  * @param {GameState} state
- * @returns {object} a plain, JSON-safe snapshot
+ * @returns a plain, JSON-safe snapshot of the game
  */
 export function serializeGame(state) {
   return {

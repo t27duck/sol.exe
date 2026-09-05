@@ -33,6 +33,7 @@ export async function pilePoint(page, pile) {
  */
 export async function cardPoint(page, cardId) {
   const selector = `.card[data-card="${cardId}"]`
+  /** @type {{ x: number, y: number, width: number, height: number }|null} */
   let previous = null
   for (let attempt = 0; attempt < 20; attempt++) {
     const box = await boxOf(page, selector)

@@ -9,7 +9,7 @@ board plays on a desktop, and on a phone held either way up.
 
 ## Requirements
 
-- **Node.js 20 or newer** (any current LTS). Check with `node --version`.
+- **Node.js 22.12 or newer** (any current LTS). Check with `node --version`.
 - npm, which ships with Node.
 
 ## Getting started
@@ -41,7 +41,7 @@ The first `npm run test:e2e` needs browsers: `npx playwright install chromium`. 
 builds the app and serves it on port 4173 itself, so no server needs to be running first.
 
 All three run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`),
-across Node 20 and the current LTS.
+across Node 22 and the current LTS.
 
 ## How it is put together
 

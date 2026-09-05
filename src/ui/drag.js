@@ -19,7 +19,7 @@ const DOUBLE_TAP_MS = 320
 /**
  * @param {object} options
  * @param {HTMLElement} options.boardElement
- * @param {ReturnType<import('./board.js').createBoard>} options.board
+ * @param {ReturnType<typeof import('./board.js').createBoard>} options.board
  * @param {() => GameState} options.getState
  * @param {() => import('../state/storage.js').Settings} options.getSettings
  * @param {(from: string, to: string, count: number) => boolean} options.onMove
@@ -206,6 +206,7 @@ export function createDragController(options) {
       height: geometry.cardH,
     }
 
+    /** @type {string|null} */
     let best = null
     let bestOverlap = 0
     for (const target of board.dropTargets(state)) {
