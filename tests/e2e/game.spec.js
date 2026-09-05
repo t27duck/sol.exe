@@ -184,7 +184,16 @@ test('F2 deals a new game and Ctrl+Z takes a move back', async ({ page }) => {
   expect((await gameState(page)).gameNumber).not.toBe(first.gameNumber)
 })
 
-test('the tableau grows downwards without leaving the board', async ({ page }) => {
+test('the tableau grows downwards without resizing the board', async ({ page }) => {
+  const outlines = () =>
+    page.locator('.pile').evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const box = node.getBoundingClientRect()
+        return [node.getAttribute('data-pile'), box.x, box.y, box.width, box.height].join()
+      }),
+    )
+  const before = await outlines()
+
   await page.evaluate(() => {
     // A deliberately long column: the layout has to compress the fan to keep it on screen.
     const { state, refresh } = globalThis.solitaire
@@ -194,6 +203,10 @@ test('the tableau grows downwards without leaving the board', async ({ page }) =
     refresh()
   })
   await page.waitForTimeout(250)
+
+  // Card size and pile placement answer to the viewport and to nothing else, so a column that
+  // outgrows its allowance compresses its own fan rather than shrinking every card on the board.
+  expect(await outlines()).toEqual(before)
 
   const board = await boxOf(page, '#board')
   const bottom = await page.locator('.card[data-pile="t3"]').evaluateAll((nodes) =>

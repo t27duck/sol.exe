@@ -2,9 +2,12 @@
  * Board geometry.
  *
  * Everything is expressed as a multiple of the card width, and the card width is whatever makes
- * the whole board -- top row plus the tallest tableau column -- fit the space available. That
+ * the whole board -- top row plus a full-length tableau column -- fit the space available. That
  * single rule is what makes the same layout work on a desktop, a phone held upright, and the
  * same phone turned on its side, with no breakpoints and no scrolling.
+ *
+ * The size is a function of the viewport only. Cards never resize because of the cards: a column
+ * that runs long tightens its own fan, and everything else on the board stays where it was.
  */
 
 import { FOUNDATION_IDS, TABLEAU_IDS } from '../engine/game.js'
@@ -18,7 +21,8 @@ const GAP_X_MAX = 0.5 // how far they may spread when the board is wider than it
 const PAD_Y = 0.1 // of card height
 const ROW_GAP = 0.22 // of card height, between the top row and the tableau
 const FAN_UP_MAX = 0.5 // of card height
-const FAN_UP_MIN = 0.12
+const FAN_UP_MIN = 0.12 // the fan a reserve-length column is guaranteed room for
+const FAN_UP_FLOOR = 0.05 // and the tightest a longer column may squeeze itself
 const FAN_DOWN_SHARE = 0.42 // a face-down card takes this share of a face-up card's step
 const WASTE_FAN = 0.3
 
@@ -34,9 +38,10 @@ const MAX_CARD_W = 170
 const MIN_CARD_W = 26
 
 /**
- * Cards are sized for a column of roughly this many steps even when the board is currently
- * sparser, so the deal does not start with huge cards that shrink as columns grow. A column
- * that outgrows the reserve does shrink the cards, which is the graceful way to keep fitting.
+ * Cards are sized for a column of this many steps -- always, whatever is on the board. Sizing
+ * against the tallest column as it stands would mean every card on the board resized the moment
+ * one column outgrew it, and resized back when it was cleared. So the reserve is a constant, and
+ * a column that outgrows it tightens its own fan instead. Only the viewport moves the cards.
  */
 const RESERVE_STEPS = 7
 
@@ -71,9 +76,9 @@ export function computeLayout(width, height, columns) {
   // Seven columns, six gaps between them, and half a gap of margin at each edge.
   const byWidth = width / (7 + 8 * GAP_X)
 
-  // Top row + row gap + the tallest column at its tightest fan, plus padding above and below.
-  const reserve = Math.max(steps, RESERVE_STEPS)
-  const byHeight = height / (CARD_RATIO * (2 + 2 * PAD_Y + ROW_GAP + reserve * FAN_UP_MIN))
+  // Top row + row gap + a reserve-length column at its tightest fan, plus padding above and
+  // below. Note what is absent: `steps`. The card size answers to the viewport and nothing else.
+  const byHeight = height / (CARD_RATIO * (2 + 2 * PAD_Y + ROW_GAP + RESERVE_STEPS * FAN_UP_MIN))
 
   const cardW = Math.max(MIN_CARD_W, Math.min(byWidth, byHeight, MAX_CARD_W))
   const cardH = cardW * CARD_RATIO
@@ -84,23 +89,32 @@ export function computeLayout(width, height, columns) {
     Math.max(cardW * GAP_X, (width - 7 * cardW) / 8),
   )
 
-  // Spend whatever height is left on a roomier fan. Sizing it against the reserve rather than
-  // the current columns keeps the step steady as the game fills the tableau up.
-  const forColumns = height - cardH * (1 + 2 * PAD_Y + ROW_GAP) - cardH
-  const fanUp = Math.max(
-    cardH * FAN_UP_MIN,
-    Math.min(cardH * FAN_UP_MAX, forColumns / Math.max(reserve, 1)),
-  )
-
   const columnsWidth = 7 * cardW + 6 * gapX
   const originX = Math.max(gapX / 2, (width - columnsWidth) / 2)
 
-  // Height left over once a reserve-sized board has been laid out at its natural spacing.
-  const surplus = height - (cardH * (2 + 2 * PAD_Y + ROW_GAP) + reserve * fanUp)
+  // Everything below the top row, once the padding and the standing row gap are paid for.
+  const forColumns = height - cardH * (2 + 2 * PAD_Y + ROW_GAP)
+
+  // The fan a reserve-length column would take here, and whatever height that leaves spare.
+  // Spending the spare on the row gap -- rather than on a looser fan -- is what pins the tableau
+  // to one spot on the board however the columns grow.
+  const reserveFan = Math.min(
+    cardH * FAN_UP_MAX,
+    Math.max(cardH * FAN_UP_MIN, forColumns / RESERVE_STEPS),
+  )
+  const surplus = forColumns - RESERVE_STEPS * reserveFan
   const rowGap = Math.min(cardH * ROW_GAP_MAX, cardH * ROW_GAP + Math.max(0, surplus))
 
   const originY = cardH * PAD_Y
   const tableauY = originY + cardH + rowGap
+
+  // What is left under the tableau's first card. A column inside the reserve fans at the reserve
+  // step; a longer one shares the same room out between more cards, and only the fan changes.
+  const forFan = height - cardH * (2 + 2 * PAD_Y) - rowGap
+  const fanUp = Math.min(
+    cardH * FAN_UP_MAX,
+    Math.max(cardH * FAN_UP_FLOOR, forFan / Math.max(steps, RESERVE_STEPS)),
+  )
 
   /** @param {number} column */
   const x = (column) => originX + column * (cardW + gapX)
