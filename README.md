@@ -40,6 +40,9 @@ npm run typecheck # check the JSDoc types
 The first `npm run test:e2e` needs browsers: `npx playwright install chromium`. The e2e suite
 builds the app and serves it on port 4173 itself, so no server needs to be running first.
 
+All three run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`),
+across Node 20 and the current LTS.
+
 ## How it is put together
 
 The code is plain ES modules — no framework, no compile step. Types are written as JSDoc
