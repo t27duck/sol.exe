@@ -91,9 +91,14 @@ export function createMenuBar(bar, menus) {
     list.style.top = `${bounds.bottom}px`
     document.body.append(list)
 
-    // Keep the menu on screen when it opens near the right-hand edge.
-    const overflow = list.getBoundingClientRect().right - window.innerWidth + 4
-    if (overflow > 0) list.style.left = `${Math.max(2, bounds.left - overflow)}px`
+    // Keep the menu on screen when it opens near an edge. A tall drop-down on a phone held
+    // sideways can outrun the bottom of the screen, and rides up over the bar rather than
+    // leaving its last item out of reach.
+    const opened = list.getBoundingClientRect()
+    const overflowX = opened.right - window.innerWidth + 4
+    if (overflowX > 0) list.style.left = `${Math.max(2, bounds.left - overflowX)}px`
+    const overflowY = opened.bottom - window.innerHeight + 4
+    if (overflowY > 0) list.style.top = `${Math.max(2, bounds.bottom - overflowY)}px`
 
     button.setAttribute('aria-expanded', 'true')
     openList = list
@@ -116,7 +121,10 @@ export function createMenuBar(bar, menus) {
       else open(menu, button)
     })
     // Once one menu is open, sliding across the bar switches between them, as in Windows.
-    button.addEventListener('pointerenter', () => {
+    // Only for a mouse: a finger raises `pointerenter` on the way down, so on a touch screen
+    // this would open the menu the tap is about to land on and the click would close it again.
+    button.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse') return
       if (openButton && openButton !== button) open(menu, button)
     })
 

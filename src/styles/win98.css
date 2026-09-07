@@ -304,6 +304,55 @@ body {
   }
 }
 
+/*
+ * Touch.
+ *
+ * A finger is not a mouse pointer. On a phone the chrome sits on its 11px floor, which leaves
+ * a menu bar button about 20px tall and a menu row the same -- half of what a thumb can hit
+ * reliably, and the rows are close enough together to make a miss land on the wrong command.
+ *
+ * The bar grows in both directions. The height is affordable: a phone held upright is limited
+ * by its width, not its height, so the cards were never going to use it. The drop-downs are
+ * painted over the board and cost nothing at all, so their rows get the full target.
+ */
+@media (pointer: coarse) {
+  .menubar__button {
+    padding: 1.05em 1.4em;
+  }
+
+  .menu {
+    min-width: 17em;
+    padding: 0.3em;
+  }
+
+  .menu__item {
+    padding: 1.3em 1.6em 1.3em 2em;
+  }
+
+  .menu__separator {
+    margin: 0.45em 0.2em;
+  }
+}
+
+/*
+ * A phone on its side is the one place where the height is the binding constraint and a full
+ * seven-row drop-down has to fit between the bar and the bottom of the screen. Both shrink to
+ * a target that still clears a thumb, rather than to the size the mouse gets.
+ */
+@media (pointer: coarse) and (max-height: 520px) {
+  .menubar__button {
+    padding: 0.55em 1.4em;
+  }
+
+  .menu__item {
+    padding: 0.85em 1.6em 0.85em 2em;
+  }
+
+  .menu__separator {
+    margin: 0.28em 0.2em;
+  }
+}
+
 /* --- Buttons and dialogs --------------------------------------------------------------- */
 
 .button {
