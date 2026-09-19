@@ -27,7 +27,8 @@
    * This tracks the cards rather than the viewport: `100vw / 7.96` is the width a card gets
    * from `layout.js`, and the 170px ceiling is the same one the cards stop growing at, so the
    * shell and the board stay in proportion and stop growing together. The floor is the
-   * original 11px, which is where a phone stays -- there the height is worth more as cards.
+   * original 11px, which is where a phone lands -- and which a phone then raises again under
+   * Touch, below, because 11px is a size for a screen an arm's length away on a desk.
    *
    * Everything in this file is sized in `em` from here, so the whole shell scales with it.
    */
@@ -307,49 +308,65 @@ body {
 /*
  * Touch.
  *
- * A finger is not a mouse pointer. On a phone the chrome sits on its 11px floor, which leaves
- * a menu bar button about 20px tall and a menu row the same -- half of what a thumb can hit
- * reliably, and the rows are close enough together to make a miss land on the wrong command.
+ * A finger is not a mouse pointer, and a phone is not held at arm's length on a desk. Left on
+ * its 11px floor the shell is both too small to hit and too small to read: a menu bar button
+ * about 20px tall and a menu row the same -- half of what a thumb can manage, and close enough
+ * together for a miss to land on the wrong command -- with the commands, the title and the
+ * score all set in type that has to be squinted at.
  *
- * The bar grows in both directions. The height is affordable: a phone held upright is limited
- * by its width, not its height, so the cards were never going to use it. The drop-downs are
- * painted over the board and cost nothing at all, so their rows get the full target.
+ * Raising the floor answers both at once, because the whole shell is measured in `em` from it:
+ * every bevel, gap and pad grows in step, so the Windows proportions survive. The height is
+ * affordable -- a phone held upright is limited by its width, not its height, so the cards
+ * were never going to use it.
+ *
+ * What is left below is the part that does not follow from the type size. The menu bar and the
+ * drop-downs still want a target rather larger than their text, but a smaller multiple of it
+ * than before, so their padding comes down as the words grow into it.
  */
 @media (pointer: coarse) {
+  :root {
+    --chrome-size: max(15px, calc(min(12.56vw, 170px) * 0.09));
+  }
+
   .menubar__button {
-    padding: 1.05em 1.4em;
+    padding: 0.6em 1.4em;
   }
 
   .menu {
-    min-width: 17em;
+    min-width: 14em;
     padding: 0.3em;
   }
 
   .menu__item {
-    padding: 1.3em 1.6em 1.3em 2em;
+    padding: 0.75em 1.6em 0.75em 2em;
   }
 
   .menu__separator {
-    margin: 0.45em 0.2em;
+    margin: 0.3em 0.2em;
   }
 }
 
 /*
  * A phone on its side is the one place where the height is the binding constraint and a full
- * seven-row drop-down has to fit between the bar and the bottom of the screen. Both shrink to
- * a target that still clears a thumb, rather than to the size the mouse gets.
+ * seven-row drop-down has to fit between the bar and the bottom of the screen. The floor and
+ * the targets both stop lower -- still bigger than the mouse gets, still a row a thumb can
+ * pick out, and the title and status bars are trimmed by the block further up as well.
  */
 @media (pointer: coarse) and (max-height: 520px) {
+  :root {
+    --chrome-size: max(13px, calc(min(12.56vw, 170px) * 0.09));
+  }
+
   .menubar__button {
-    padding: 0.55em 1.4em;
+    padding: 0.35em 1.4em;
   }
 
   .menu__item {
-    padding: 0.85em 1.6em 0.85em 2em;
+    padding: 0.6em 1.6em 0.6em 2em;
   }
 
   .menu__separator {
-    margin: 0.28em 0.2em;
+    margin: 0.22em 0.2em;
   }
 }
 
