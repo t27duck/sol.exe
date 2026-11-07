@@ -22,6 +22,19 @@ const BOUNCE = 0.82
 const LAUNCH_INTERVAL_MS = 90
 
 /**
+ * The motion constants above are per frame at 60 frames a second. Each step scales them by how
+ * long the frame actually took, so a 120Hz or 144Hz display plays the cascade at the same speed
+ * rather than twice as fast.
+ */
+const REFERENCE_FRAME_MS = 1000 / 60
+
+/**
+ * The most frames' worth of motion one step may cover. After a stall -- a background tab, a
+ * long garbage collection -- a card should pick up where it was, not leap across the board.
+ */
+const MAX_FRAME_STEP = 3
+
+/**
  * Pixels per CSS pixel for the cascade, capped below the 2x a dense display would ask for.
  * Everything here is either moving fast or is part of a trail smeared across the felt, so the
  * extra sampling buys nothing visible while costing memory in proportion to the board's area
@@ -54,6 +67,8 @@ export function createCascade(canvas, boardElement) {
   let ratio = 1
 
   let nextLaunch = 0
+  /** @type {number|null} timestamp of the previous frame, `null` before the first */
+  let lastFrame = null
   let width = 0
   let height = 0
   let cardW = 0
@@ -113,6 +128,10 @@ export function createCascade(canvas, boardElement) {
     const context = canvas.getContext('2d')
     if (!context) return stop()
 
+    const frames =
+      lastFrame === null ? 1 : Math.min(MAX_FRAME_STEP, (now - lastFrame) / REFERENCE_FRAME_MS)
+    lastFrame = now
+
     if (waiting.length > 0 && now >= nextLaunch) {
       const card = /** @type {typeof waiting[number]} */ (waiting.shift())
       flying.push({
@@ -127,9 +146,9 @@ export function createCascade(canvas, boardElement) {
     }
 
     for (const card of flying) {
-      card.vy += GRAVITY * scaleY
-      card.x += card.vx
-      card.y += card.vy
+      card.vy += GRAVITY * scaleY * frames
+      card.x += card.vx * frames
+      card.y += card.vy * frames
 
       if (card.y + cardH >= height) {
         card.y = height - cardH
@@ -189,6 +208,7 @@ export function createCascade(canvas, boardElement) {
 
       waiting = cards
       nextLaunch = 0
+      lastFrame = null
       boardElement.classList.add('board--cascading')
       frame = requestAnimationFrame(step)
     },
