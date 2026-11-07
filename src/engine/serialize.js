@@ -84,6 +84,52 @@ function migrate(data) {
   return data
 }
 
+/** Piles a move may leave, and piles it may land on. */
+const SOURCE_PILE = /^(waste|f[0-3]|t[0-6])$/
+const TARGET_PILE = /^(f[0-3]|t[0-6])$/
+
+/**
+ * Whether a history entry is one `undo()` can act on. This checks shape, not whether the
+ * entry agrees with the board -- that would mean replaying the game.
+ * @param {any} record
+ */
+function isMoveRecord(record) {
+  if (!record || typeof record !== 'object') return false
+  if (!Number.isInteger(record.count) || record.count < 1 || record.count > 52) return false
+  if (!Number.isFinite(record.scoreDelta)) return false
+  if (record.won !== undefined && typeof record.won !== 'boolean') return false
+  if (record.bonus !== undefined && !Number.isFinite(record.bonus)) return false
+
+  switch (record.kind) {
+    case 'draw':
+    case 'recycle':
+      return true
+    case 'move':
+      return (
+        typeof record.from === 'string' &&
+        SOURCE_PILE.test(record.from) &&
+        typeof record.to === 'string' &&
+        TARGET_PILE.test(record.to) &&
+        record.from !== record.to &&
+        typeof record.flipped === 'boolean'
+      )
+    default:
+      return false
+  }
+}
+
+/**
+ * The saved undo history, or an empty one if any entry is malformed. Entries are undone from
+ * the end, each relying on the ones after it having been undone first, so keeping only the
+ * good ones would undo the wrong moves; losing undo is the safe way to fail.
+ * @param {unknown} value
+ * @returns {import('./game.js').MoveRecord[]}
+ */
+function decodeHistory(value) {
+  if (!Array.isArray(value) || !value.every(isMoveRecord)) return []
+  return value
+}
+
 /**
  * @param {unknown} raw
  * @returns {GameState|null} the restored game, or `null` when the snapshot is unusable
@@ -122,7 +168,7 @@ export function deserializeGame(raw) {
     elapsed: Number(data.elapsed) || 0,
     timePenaltyApplied: Number(data.timePenaltyApplied) || 0,
     moves: Number(data.moves) || 0,
-    history: Array.isArray(data.history) ? data.history : [],
+    history: decodeHistory(data.history),
     status: data.status === 'won' ? 'won' : 'playing',
     started: Boolean(data.started),
   }

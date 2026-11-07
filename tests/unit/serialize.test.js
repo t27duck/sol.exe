@@ -7,6 +7,7 @@ import {
   getPile,
   move,
   setElapsed,
+  undo,
 } from '../../src/engine/game.js'
 import { SAVE_VERSION, deserializeGame, serializeGame } from '../../src/engine/serialize.js'
 
@@ -104,5 +105,39 @@ describe('rejecting saves it cannot trust', () => {
     expect(restored?.scoring).toBe('standard')
     expect(restored?.status).toBe('playing')
     expect(restored?.score).toBe(0)
+  })
+})
+
+describe('the undo history', () => {
+  const saved = () => JSON.parse(JSON.stringify(serializeGame(playedGame())))
+
+  it('survives a round trip and can still be undone', () => {
+    const restored = deserializeGame(saved())
+    expect(restored?.history.length).toBeGreaterThan(0)
+    while (restored && restored.history.length > 0) expect(undo(restored)).toBe(true)
+  })
+
+  it.each([
+    ['a record that is not an object', 'nonsense'],
+    ['an unknown kind', { kind: 'teleport', count: 1, scoreDelta: 0 }],
+    ['a move with no source pile', { kind: 'move', to: 'f0', count: 1, flipped: false, scoreDelta: 0 }],
+    ['a move onto the waste', { kind: 'move', from: 't0', to: 'waste', count: 1, flipped: false, scoreDelta: 0 }],
+    ['a move to a pile that does not exist', { kind: 'move', from: 't0', to: 't9', count: 1, flipped: false, scoreDelta: 0 }],
+    ['a count of no cards', { kind: 'draw', count: 0, scoreDelta: 0 }],
+    ['a score that is not a number', { kind: 'draw', count: 1, scoreDelta: 'lots' }],
+  ])('is dropped whole for %s, keeping the game', (_, record) => {
+    const data = saved()
+    data.history.splice(1, 0, record)
+
+    const restored = deserializeGame(data)
+    expect(restored).not.toBeNull()
+    expect(restored?.history).toEqual([])
+    expect(restored && undo(restored)).toBe(false)
+  })
+
+  it('is empty when the save has none', () => {
+    const data = saved()
+    delete data.history
+    expect(deserializeGame(data)?.history).toEqual([])
   })
 })
