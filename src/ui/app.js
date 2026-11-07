@@ -185,13 +185,13 @@ export function createApp() {
       stats.won++
       stats.streak++
       stats.bestStreak = Math.max(stats.bestStreak, stats.streak)
-      if (settings.timed && (stats.bestTime === 0 || state.elapsed < stats.bestTime)) {
+      if (state.timed && (stats.bestTime === 0 || state.elapsed < stats.bestTime)) {
         stats.bestTime = state.elapsed
       }
     } else {
       stats.streak = 0
     }
-    if (settings.scoring === 'standard') stats.bestScore = Math.max(stats.bestScore, state.score)
+    if (state.scoring === 'standard') stats.bestScore = Math.max(stats.bestScore, state.score)
     saveStats(stats)
   }
 
@@ -205,7 +205,7 @@ export function createApp() {
 
     const again = await confirmDialog(
       'Solitaire',
-      settings.scoring === 'vegas'
+      state.scoring === 'vegas'
         ? `You win! Final score $${state.score}. Deal again?`
         : `You win with ${state.score} points. Deal again?`,
       'Deal',
@@ -274,17 +274,34 @@ export function createApp() {
 
   /** @param {number} [gameNumber] */
   function newGame(gameNumber) {
+    endGame()
+    deal(gameNumber)
+  }
+
+  /**
+   * Settles the game being left: counts it in the statistics and banks a Vegas score. Judged by
+   * the game's own rules, not the current settings -- changing the options ends the game in
+   * progress, and it must not be scored as though it had been played under the new ones.
+   */
+  function endGame() {
     stopAutoFinish()
     cascade.stop()
 
     if (state.started) {
       recordResult(state.status === 'won')
-      if (settings.scoring === 'vegas' && settings.keepScore) {
+      if (state.scoring === 'vegas' && settings.keepScore) {
         stats.vegasTotal += state.score
         saveStats(stats)
       }
     }
+  }
 
+  /**
+   * Deals a fresh game with the current settings. Call {@link endGame} first, or the game being
+   * replaced goes uncounted.
+   * @param {number} [gameNumber]
+   */
+  function deal(gameNumber) {
     recorded = false
     celebrated = false
     autoFinishHeld = null
@@ -393,11 +410,14 @@ export function createApp() {
       if (!confirmed) return
     }
 
+    // Settle the old game under the settings it was played with before they change.
+    if (needsDeal) endGame()
+
     settings = next
     saveSettings(settings)
     status.setVisible(settings.statusBar)
 
-    if (needsDeal) newGame()
+    if (needsDeal) deal()
     else apply()
   }
 

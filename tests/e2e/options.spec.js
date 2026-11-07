@@ -85,3 +85,26 @@ test('options and the chosen deck survive a reload', async ({ page }) => {
   )
   expect(backAfter).toBe(backBefore)
 })
+
+test('a game ended by changing the rules is scored by the rules it was played under', async ({
+  page,
+}) => {
+  // A Standard game with points on the board...
+  await page.evaluate(() => {
+    const { state, refresh } = globalThis.solitaire
+    state.score = 100
+    state.started = true
+    refresh()
+  })
+
+  // ...abandoned by switching to Vegas with the balance carried over.
+  await setOptions(page, { Vegas: true, 'Keep score (Vegas)': true })
+  expect((await gameState(page)).score).toBe(-52)
+
+  await openMenuItem(page, 'Game', 'Statistics…')
+  const stats = page.locator('dialog[open]')
+  await expect(stats.locator('tr', { hasText: 'Games played' })).toContainText('1')
+  // Its points count as a Standard score and never reach the Vegas balance.
+  await expect(stats.locator('tr', { hasText: 'Best score' })).toContainText('100')
+  await expect(stats.locator('tr', { hasText: 'Vegas balance' })).toContainText('$0')
+})
