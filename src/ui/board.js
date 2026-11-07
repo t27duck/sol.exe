@@ -17,6 +17,13 @@ import { cardOffsets } from './layout.js'
 /** Render order, which is also stacking order: later piles draw over earlier ones. */
 export const PILE_IDS = ['stock', 'waste', ...FOUNDATION_IDS, ...TABLEAU_IDS]
 
+/**
+ * Added to a moving card's stacking order for the length of its slide. Its resting place may
+ * stack under piles it has to cross -- a foundation sits under every tableau column -- so it
+ * flies above the board and settles into place when it lands. Still below a drag (1000+).
+ */
+const IN_FLIGHT_Z = 200
+
 /** Empty-pile labels, so a screen reader hears more than "blank". */
 const PILE_LABELS = {
   stock: 'Stock',
@@ -58,6 +65,13 @@ export function createBoard(elements) {
     face.alt = ''
     face.draggable = false
     element.append(face)
+
+    // Landing: drop back to the stacking order the last render gave the card's pile.
+    element.addEventListener('transitionend', (event) => {
+      if (event.propertyName !== 'transform' || !element.classList.contains('card--moving')) return
+      element.classList.remove('card--moving')
+      element.style.zIndex = element.dataset.z ?? ''
+    })
 
     cardElements.set(card.id, element)
     elements.cards.append(element)
@@ -116,6 +130,9 @@ export function createBoard(elements) {
         )
       }
 
+      // A re-layout snaps every card into place rather than sliding it, so nothing is in flight.
+      const instant = elements.board.classList.contains('board--instant')
+
       let z = 1
       for (const pileId of PILE_IDS) {
         const origin = next.piles[pileId]
@@ -127,8 +144,24 @@ export function createBoard(elements) {
 
         pile.forEach((card, index) => {
           const element = /** @type {HTMLElement} */ (cardElements.get(card.id))
-          place(element, origin.x + offsets[index].x, origin.y + offsets[index].y)
-          element.style.zIndex = String(z++)
+          const x = origin.x + offsets[index].x
+          const y = origin.y + offsets[index].y
+          const moved =
+            element.style.getPropertyValue('--x') !== `${x}px` ||
+            element.style.getPropertyValue('--y') !== `${y}px`
+          const changedPile = element.dataset.pile !== undefined && element.dataset.pile !== pileId
+          // A card let go from a drag flies too, even back to its own pile: the way home can
+          // cross the columns to its right, which stack above it.
+          const dropped = 'dropped' in element.dataset
+          delete element.dataset.dropped
+
+          if (instant) element.classList.remove('card--moving')
+          else if ((changedPile || dropped) && moved) element.classList.add('card--moving')
+
+          place(element, x, y)
+          element.dataset.z = String(z)
+          const lift = element.classList.contains('card--moving') ? IN_FLIGHT_Z : 0
+          element.style.zIndex = String(lift + z++)
           element.classList.toggle('card--down', !card.faceUp)
           element.dataset.pile = pileId
           element.dataset.index = String(index)
@@ -166,6 +199,20 @@ export function createBoard(elements) {
     highlightDrop(pileId) {
       for (const [id, element] of pileElements) {
         element.classList.toggle('pile--drop', id === pileId)
+      }
+    },
+
+    /**
+     * Lets go of dragged cards. The next render sends them to wherever they belong, above the
+     * rest of the board until they land.
+     * @param {string[]} cardIds
+     */
+    releaseDrag(cardIds) {
+      for (const id of cardIds) {
+        const element = /** @type {HTMLElement} */ (cardElements.get(id))
+        element.classList.remove('card--dragging', 'card--ghost')
+        element.style.zIndex = ''
+        element.dataset.dropped = ''
       }
     },
 

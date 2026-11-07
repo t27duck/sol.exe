@@ -242,11 +242,7 @@ export function createDragController(options) {
     const at = pointAt(event)
     const target = targetUnder(active, at.x - active.startX, at.y - active.startY)
 
-    for (const id of active.cards) {
-      const element = /** @type {HTMLElement} */ (board.elementFor(id))
-      element.classList.remove('card--dragging', 'card--ghost')
-      element.style.zIndex = ''
-    }
+    board.releaseDrag(active.cards)
     board.highlightDrop(null)
 
     // Whether or not the drop was legal, re-rendering animates the cards to where they belong.
@@ -303,11 +299,7 @@ export function createDragController(options) {
     const active = gesture
     gesture = null
     if (!active) return
-    for (const id of active.cards) {
-      const element = /** @type {HTMLElement} */ (board.elementFor(id))
-      element.classList.remove('card--dragging', 'card--ghost')
-      element.style.zIndex = ''
-    }
+    board.releaseDrag(active.cards)
     board.highlightDrop(null)
     finish()
   }

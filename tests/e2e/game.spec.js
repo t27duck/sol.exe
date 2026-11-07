@@ -116,6 +116,93 @@ test('double-clicking sends a card to a foundation', async ({ page }) => {
   expect(state.score).toBe(10)
 })
 
+test('a card flies to its foundation over the tableau, not under it', async ({ page }) => {
+  await selectGame(page, OPENING_GAME)
+
+  // Put an ace on the last column, so its way home crosses every other column.
+  const ace = await page.evaluate(() => {
+    const { state, refresh } = globalThis.solitaire
+    const piles = [state.stock, state.waste, ...state.tableau]
+    const pile = /** @type {any[]} */ (piles.find((cards) => cards.some((c) => c.rank === 1)))
+    const card = pile.splice(pile.findIndex((c) => c.rank === 1), 1)[0]
+    card.faceUp = true
+    state.tableau[6].push(card)
+    refresh()
+    return card.id
+  })
+
+  const at = await cardPoint(page, ace)
+  // Slow the slide down enough to look at it mid-flight.
+  await page.evaluate(() =>
+    document.getElementById('board')?.style.setProperty('--deal-ms', '1500ms'),
+  )
+  await page.mouse.dblclick(at.x, at.y)
+
+  const stacking = () =>
+    page.evaluate((id) => {
+      const z = (element) => Number(getComputedStyle(element).zIndex)
+      const tableau = [...document.querySelectorAll('.card[data-pile^="t"]')].map(z)
+      const card = /** @type {HTMLElement} */ (document.querySelector(`[data-card="${id}"]`))
+      return { card: z(card), pile: card.dataset.pile, tableau: Math.max(...tableau) }
+    }, ace)
+
+  const inFlight = await stacking()
+  expect(inFlight.pile).toMatch(/^f/)
+  expect(inFlight.card).toBeGreaterThan(inFlight.tableau)
+
+  // Once it lands it settles back under the tableau, where a foundation belongs.
+  await expect
+    .poll(async () => (await stacking()).card, { timeout: 4000 })
+    .toBeLessThan(inFlight.tableau)
+})
+
+test('a card dropped nowhere flies back over the tableau, not under it', async ({ page }) => {
+  await selectGame(page, OPENING_GAME)
+
+  // An ace on the first column has nowhere to go on the tableau, and its way back from the far
+  // side of the board crosses every column that stacks above it.
+  const ace = await page.evaluate(() => {
+    const { state, refresh } = globalThis.solitaire
+    const piles = [state.stock, state.waste, ...state.tableau]
+    const pile = /** @type {any[]} */ (piles.find((cards) => cards.some((c) => c.rank === 1)))
+    const card = pile.splice(pile.findIndex((c) => c.rank === 1), 1)[0]
+    card.faceUp = true
+    state.tableau[0].push(card)
+    refresh()
+    return card.id
+  })
+
+  const at = await cardPoint(page, ace)
+  const board = await boxOf(page, '#board')
+  await page.evaluate(() =>
+    document.getElementById('board')?.style.setProperty('--deal-ms', '1500ms'),
+  )
+  await page.mouse.move(at.x, at.y)
+  await page.mouse.down()
+  await page.mouse.move(at.x + 20, at.y + 20, { steps: 4 })
+  await page.mouse.move(board.x + board.width - 10, board.y + board.height - 10, { steps: 8 })
+  await page.mouse.up()
+
+  const stacking = () =>
+    page.evaluate((id) => {
+      const z = (element) => Number(getComputedStyle(element).zIndex)
+      const card = /** @type {HTMLElement} */ (document.querySelector(`[data-card="${id}"]`))
+      const others = [...document.querySelectorAll('.card[data-pile^="t"]')]
+        .filter((element) => element !== card)
+        .map(z)
+      return { card: z(card), pile: card.dataset.pile, tableau: Math.max(...others) }
+    }, ace)
+
+  const inFlight = await stacking()
+  expect(inFlight.pile).toBe('t0')
+  expect(inFlight.card).toBeGreaterThan(inFlight.tableau)
+
+  // Back home on the first column, which stacks under all the others.
+  await expect
+    .poll(async () => (await stacking()).card, { timeout: 4000 })
+    .toBeLessThan(inFlight.tableau)
+})
+
 test('tapping a card and then a column moves it, which is how a phone plays', async ({ page }) => {
   await selectGame(page, OPENING_GAME)
 
