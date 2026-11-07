@@ -301,3 +301,45 @@ test('the tableau grows downwards without resizing the board', async ({ page }) 
   )
   expect(bottom).toBeLessThanOrEqual(board.y + board.height + 1)
 })
+
+test('a card dealt back before its slide gets going still lands', async ({ page }) => {
+  // Draw and deal again in one go, so the drawn card is sent back to the stock before its slide
+  // to the waste has moved it at all. The browser cancels that slide with nothing to replace it.
+  const stock = await pilePoint(page, 'stock')
+  await page.evaluate(({ x, y }) => {
+    const board = /** @type {HTMLElement} */ (document.getElementById('board'))
+    board.dispatchEvent(
+      new PointerEvent('pointerdown', { clientX: x, clientY: y, button: 0, bubbles: true }),
+    )
+    globalThis.solitaire.newGame()
+  }, stock)
+
+  await expect(page.locator('.card--moving')).toHaveCount(0, { timeout: 2000 })
+})
+
+test('a card in flight never covers an open menu', async ({ page }) => {
+  // Slow the slide right down so the card is still lifted while the menu is open.
+  await page.evaluate(() =>
+    document.getElementById('board')?.style.setProperty('--deal-ms', '5000ms'),
+  )
+  await drawCard(page)
+  await expect(page.locator('.card--moving')).toHaveCount(1)
+
+  await page.getByRole('menuitem', { name: 'Game', exact: true }).click()
+  const item = page.getByRole('menuitem', { name: 'Statistics…' })
+  const box = await item.boundingBox()
+  if (!box) throw new Error('no box for the Statistics item')
+
+  const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+
+  // Where the card's path crosses the menu depends on the layout, so park it under the item.
+  const topmost = await page.evaluate(({ x, y }) => {
+    const card = /** @type {HTMLElement} */ (document.querySelector('.card--moving'))
+    const board = /** @type {HTMLElement} */ (document.getElementById('board')).getBoundingClientRect()
+    card.style.transition = 'none'
+    card.style.setProperty('--x', `${x - board.left - 4}px`)
+    card.style.setProperty('--y', `${Math.max(0, y - board.top - 4)}px`)
+    return document.elementFromPoint(x, y)?.closest('[role="menuitem"]')?.textContent ?? ''
+  }, at)
+  expect(topmost).toContain('Statistics')
+})

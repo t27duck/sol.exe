@@ -15,6 +15,11 @@
   border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
   /* The board is dragged on, so the browser must not claim the gesture for scrolling. */
   touch-action: none;
+  /*
+   * Card stacking orders run into the hundreds while a card is in flight or dragged. Keep them
+   * inside the board, so nothing on it can ever cover the menus that drop down over it.
+   */
+  isolation: isolate;
 }
 
 .board:focus {

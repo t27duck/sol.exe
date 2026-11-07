@@ -67,10 +67,22 @@ export function createBoard(elements) {
     element.append(face)
 
     // Landing: drop back to the stacking order the last render gave the card's pile.
-    element.addEventListener('transitionend', (event) => {
+    /** @param {TransitionEvent} event */
+    const land = (event) => {
       if (event.propertyName !== 'transform' || !element.classList.contains('card--moving')) return
       element.classList.remove('card--moving')
       element.style.zIndex = element.dataset.z ?? ''
+    }
+    element.addEventListener('transitionend', land)
+    // A slide sent back where it started before it got going -- drawing a card and dealing
+    // again straight away -- is cancelled with nothing to replace it, so no transitionend
+    // follows and the card would stay lifted for good. A slide redirected mid-flight is
+    // cancelled too, but its replacement is already running and will land it.
+    element.addEventListener('transitioncancel', (event) => {
+      const stillSliding = element
+        .getAnimations()
+        .some((animation) => animation instanceof CSSTransition && animation.transitionProperty === 'transform')
+      if (!stillSliding) land(event)
     })
 
     cardElements.set(card.id, element)
