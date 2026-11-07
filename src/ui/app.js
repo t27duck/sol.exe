@@ -79,6 +79,14 @@ export function createApp() {
   let clock = null
   /** @type {number|null} */
   let autoFinish = null
+  /**
+   * The position auto-finish should leave alone: the one it last gave up on, or the one the
+   * player undid back to. Without it, `apply()` would restart the auto-finish the moment it
+   * stopped, cycling the stock forever on a game it cannot finish and replaying any move the
+   * player tried to take back.
+   * @type {string|null}
+   */
+  let autoFinishHeld = null
 
   /** Picks up where the player left off, or deals a fresh game with the current settings. */
   function restoreOrDeal() {
@@ -141,7 +149,7 @@ export function createApp() {
       return
     }
 
-    if (canAutoFinish(state)) startAutoFinish()
+    if (canAutoFinish(state) && autoFinishHeld !== positionKey(state)) startAutoFinish()
     else if (isStuck(state)) status.setMessage('No more moves — press F2 to deal again.')
     else status.setMessage('')
   }
@@ -231,12 +239,25 @@ export function createApp() {
     return new Promise((resolve) => cascade.start(cards, layout, resolve))
   }
 
+  /**
+   * Identifies a position by what is on the foundations and tableau. The stock and waste are
+   * left out on purpose: auto-finish has already turned through every card in them, so only a
+   * move on the table can give it something new to play.
+   * @param {GameState} game
+   */
+  function positionKey(game) {
+    return [...game.foundations, ...game.tableau]
+      .map((pile) => pile.map((card) => (card.faceUp ? card.id : `-${card.id}`)).join(','))
+      .join('|')
+  }
+
   function startAutoFinish() {
     if (autoFinish !== null) return
     const context = { idle: 0 }
     autoFinish = window.setInterval(() => {
       if (!autoFinishStep(state, context)) {
         stopAutoFinish()
+        autoFinishHeld = positionKey(state)
         apply()
         return
       }
@@ -266,6 +287,7 @@ export function createApp() {
 
     recorded = false
     celebrated = false
+    autoFinishHeld = null
     state = createGame({
       gameNumber: gameNumber ?? randomGameNumber(),
       drawCount: settings.drawCount,
@@ -300,6 +322,8 @@ export function createApp() {
     if (!undo(state)) return
     // Taking a winning move back puts the game back in play, cascade and all.
     if (state.status === 'playing') celebrated = false
+    // Let the player stay where they undid to; their next move hands control back.
+    autoFinishHeld = positionKey(state)
     apply()
   }
 
