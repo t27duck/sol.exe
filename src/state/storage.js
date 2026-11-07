@@ -60,20 +60,27 @@ export const DEFAULT_STATS = {
   vegasTotal: 0,
 }
 
+/** @type {Storage|null|undefined} the answer {@link store} settled on; `undefined` until asked */
+let cachedStore
+
 /**
+ * Checked once and remembered: the game saves every second while the clock runs, and probing
+ * on each save would add two writes to every one it makes.
  * @returns {Storage|null} local storage, or `null` when the browser will not give us one
  */
 function store() {
+  if (cachedStore !== undefined) return cachedStore
   try {
     const storage = globalThis.localStorage
     // Touch it: Safari in private mode hands back an object that throws only on write.
     const probe = '__solexe__'
     storage.setItem(probe, probe)
     storage.removeItem(probe)
-    return storage
+    cachedStore = storage
   } catch {
-    return null
+    cachedStore = null
   }
+  return cachedStore
 }
 
 /**
