@@ -173,9 +173,9 @@ export function createCascade(canvas, boardElement) {
       onFinish = whenDone ?? null
 
       ratio = Math.min(window.devicePixelRatio || 1, RENDER_SCALE_CAP)
-      const bounds = boardElement.getBoundingClientRect()
-      width = bounds.width
-      height = bounds.height
+      // The canvas fills the board's padding box, which is the border-box bounds less the border.
+      width = boardElement.clientWidth
+      height = boardElement.clientHeight
       cardW = layout.cardW
       cardH = layout.cardH
       scaleX = width / REFERENCE_BOARD.width

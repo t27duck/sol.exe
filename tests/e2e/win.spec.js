@@ -57,6 +57,20 @@ test('finishes itself, runs the cascade and offers another deal', async ({ page 
   expect(scale).toBeGreaterThan(0)
   expect(scale).toBeLessThanOrEqual(1.5 + 0.01)
 
+  // ...but it must still be displayed at the board's size, not its backing store's, or every
+  // card it paints comes out larger than the ones that were played.
+  const display = await page.evaluate(() => {
+    const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('cascade'))
+    const board = /** @type {HTMLElement} */ (document.getElementById('board'))
+    const bounds = canvas.getBoundingClientRect()
+    return {
+      width: bounds.width - board.clientWidth,
+      height: bounds.height - board.clientHeight,
+    }
+  })
+  expect(Math.abs(display.width)).toBeLessThan(1)
+  expect(Math.abs(display.height)).toBeLessThan(1)
+
   // The cascade runs until it is interrupted, exactly as the original did.
   await page.locator('#board').click({ position: { x: 20, y: 20 } })
   await expect(page.locator('#board')).not.toHaveClass(/board--cascading/)
