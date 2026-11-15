@@ -6,7 +6,7 @@ import { createCascade } from '../../src/ui/winanim.js'
  * frames are fired by hand at whatever rate the test chooses, and every card the cascade draws
  * is recorded rather than painted.
  */
-function harness() {
+function harness(count = 1) {
   /** @type {FrameRequestCallback|null} */
   let pending = null
   /** @type {{ x: number, y: number }[]} */
@@ -38,8 +38,13 @@ function harness() {
   const image = /** @type {any} */ ({ complete: false, naturalWidth: 0 })
   const layout = /** @type {any} */ ({ cardW: 71, cardH: 96 })
 
+  let clock = 0
+
   const cascade = createCascade(canvas, board)
-  cascade.start([{ image, x: 100, y: 50 }], layout)
+  cascade.start(
+    Array.from({ length: count }, () => ({ image, x: 600, y: 50 })),
+    layout,
+  )
 
   return {
     cascade,
@@ -51,11 +56,26 @@ function harness() {
      */
     run(interval, until) {
       for (let now = 0; now <= until + 1e-6 && pending; now += interval) {
+        clock = now
         const callback = pending
         pending = null
         callback(now)
       }
       return drawn[drawn.length - 1]
+    },
+    /** Fires a single frame, `interval` milliseconds after the last one. */
+    tick(interval) {
+      if (!pending) return
+      const callback = pending
+      pending = null
+      clock += interval
+      callback(clock)
+    },
+    /** Every card drawn so far, frame by frame. */
+    drawn,
+    /** Whether the cascade still has a frame queued. */
+    get running() {
+      return pending !== null
     },
   }
 }
@@ -81,7 +101,7 @@ describe('the win cascade', () => {
     expect(Math.abs(at120.x - at60.x)).toBeLessThan(3)
     expect(Math.abs(at144.x - at60.x)).toBeLessThan(3)
     expect(Math.abs(at120.y - at60.y)).toBeLessThan(6)
-    expect(at60.x).toBeGreaterThan(100)
+    expect(at60.x).toBeLessThan(600)
   })
 
   it('does not let a stalled frame throw a card across the board', () => {
@@ -90,5 +110,30 @@ describe('the win cascade', () => {
     // One frame, then nothing for two seconds -- a tab put in the background, say.
     const stalled = harness().run(2000, 2000)
     expect(Math.abs(stalled.x - smooth.x)).toBeLessThan(60)
+  })
+
+  it('keeps only one card in flight, launching the next once the last has left', () => {
+    const cascade = harness(3)
+    let frames = 0
+    while (cascade.running && frames < 10000) {
+      const before = cascade.drawn.length
+      cascade.tick(1000 / 60)
+      // One draw per frame means one card on the board at a time.
+      expect(cascade.drawn.length - before).toBeLessThanOrEqual(1)
+      frames++
+    }
+    expect(cascade.running).toBe(false)
+
+    // Each card starts from its foundation, so a jump back to x = 600 marks a new launch.
+    const launches = cascade.drawn.filter((at, index) => index === 0 || at.x > cascade.drawn[index - 1].x)
+    expect(launches).toHaveLength(3)
+  })
+
+  it('sends most cards left and the odd one right', () => {
+    const left = harness().run(1000 / 60, 200)
+    vi.spyOn(Math, 'random').mockReturnValue(0.05)
+    const right = harness().run(1000 / 60, 200)
+    expect(left.x).toBeLessThan(600)
+    expect(right.x).toBeGreaterThan(600)
   })
 })

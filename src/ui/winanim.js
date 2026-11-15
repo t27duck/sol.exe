@@ -2,8 +2,9 @@
  * The bouncing-card cascade that plays when a game is won.
  *
  * Cards leave the foundations one at a time and fall under gravity, bouncing off the bottom of
- * the board. The canvas is never cleared, so each card smears itself across the felt exactly the
- * way the original did.
+ * the board. As in the original, only one card is ever in flight: the next waits until the last
+ * has left the board. The canvas is never cleared, so each card smears itself across the felt
+ * exactly the way the original did.
  *
  * The card faces are vector art, and asking the browser to rasterise a court card's several
  * thousand path segments afresh on every frame -- for up to 52 cards at once -- is what makes
@@ -19,7 +20,9 @@
 
 const GRAVITY = 0.28
 const BOUNCE = 0.82
-const LAUNCH_INTERVAL_MS = 90
+
+/** Most cards head off to the left, as they did in Windows; now and then one goes right. */
+const RIGHT_CHANCE = 0.15
 
 /**
  * The motion constants above are per frame at 60 frames a second. Each step scales them by how
@@ -66,7 +69,6 @@ export function createCascade(canvas, boardElement) {
   let waiting = []
   let ratio = 1
 
-  let nextLaunch = 0
   /** @type {number|null} timestamp of the previous frame, `null` before the first */
   let lastFrame = null
   let width = 0
@@ -132,17 +134,19 @@ export function createCascade(canvas, boardElement) {
       lastFrame === null ? 1 : Math.min(MAX_FRAME_STEP, (now - lastFrame) / REFERENCE_FRAME_MS)
     lastFrame = now
 
-    if (waiting.length > 0 && now >= nextLaunch) {
+    // One card at a time: the next leaves its foundation only once the last is off the board.
+    if (flying.length === 0 && waiting.length > 0) {
       const card = /** @type {typeof waiting[number]} */ (waiting.shift())
+      const direction = Math.random() < RIGHT_CHANCE ? 1 : -1
       flying.push({
         sprite: rasterise(card.image),
         x: card.x,
         y: card.y,
-        // Aim outward from wherever the card was sitting, so the fans spread across the board.
-        vx: (card.x + cardW / 2 < width / 2 ? 1 : -1) * (2 + Math.random() * 5) * scaleX,
-        vy: -(2 + Math.random() * 4) * scaleY,
+        // A wide spread of speeds, and some cards dropping rather than leaping off their
+        // foundation, so no two cards bounce in step with each other.
+        vx: direction * (5 + Math.random() * 11) * scaleX,
+        vy: (Math.random() * 12 - 9) * scaleY,
       })
-      nextLaunch = now + LAUNCH_INTERVAL_MS
     }
 
     for (const card of flying) {
@@ -206,8 +210,7 @@ export function createCascade(canvas, boardElement) {
       if (!context) return
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
 
-      waiting = cards
-      nextLaunch = 0
+      waiting = [...cards]
       lastFrame = null
       boardElement.classList.add('board--cascading')
       frame = requestAnimationFrame(step)
