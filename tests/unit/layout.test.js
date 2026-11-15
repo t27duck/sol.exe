@@ -79,6 +79,18 @@ describe.each(VIEWPORTS)('layout at $name ($width x $height)', ({ width, height 
   })
 })
 
+describe('row gap', () => {
+  it('keeps the tableau close under the top row on a tall phone', () => {
+    // A phone held upright has height to spare; it belongs under the columns, not between the
+    // deck and the tableau.
+    for (const [width, height] of [[390, 760], [412, 840], [375, 600]]) {
+      const layout = computeLayout(width, height, tableauWith(6, 1))
+      const gap = layout.piles.t0.y - (layout.piles.stock.y + layout.cardH)
+      expect(gap).toBeLessThan(layout.cardH * 0.25)
+    }
+  })
+})
+
 describe('tableau fanning', () => {
   it('steps by the covered card, so face-down cards take less room', () => {
     const layout = computeLayout(1280, 650, tableauWith(2, 3))

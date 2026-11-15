@@ -26,13 +26,6 @@ const FAN_UP_FLOOR = 0.08 // and the tightest a longer column may squeeze itself
 const FAN_DOWN_SHARE = 0.42 // a face-down card takes this share of a face-up card's step
 const WASTE_FAN = 0.3
 
-/**
- * How far the top row and the tableau may drift apart, in card heights. A tall phone has more
- * height than seven columns of width-limited cards can ever use; spending the surplus here
- * keeps the deck where it belongs at the top while moving the columns into thumb reach.
- */
-const ROW_GAP_MAX = 1.2
-
 /** Beyond this the cards stop growing and the board simply centres itself. */
 const MAX_CARD_W = 170
 const MIN_CARD_W = 26
@@ -101,18 +94,11 @@ export function computeLayout(width, height, columns) {
   const columnsWidth = 7 * cardW + 6 * gapX
   const originX = Math.max(gapX / 2, (width - columnsWidth) / 2)
 
-  // Everything below the top row, once the padding and the standing row gap are paid for.
-  const forColumns = height - cardH * (2 + 2 * PAD_Y + ROW_GAP)
-
-  // The fan a reserve-length column would take here, and whatever height that leaves spare.
-  // Spending the spare on the row gap -- rather than on a looser fan -- is what pins the tableau
-  // to one spot on the board however the columns grow.
-  const reserveFan = Math.min(
-    cardH * FAN_UP_MAX,
-    Math.max(cardH * FAN_UP_MIN, forColumns / RESERVE_STEPS),
-  )
-  const surplus = forColumns - RESERVE_STEPS * reserveFan
-  const rowGap = Math.min(cardH * ROW_GAP_MAX, cardH * ROW_GAP + Math.max(0, surplus))
+  // The tableau sits a fixed distance under the top row, whatever the board's height. A tall
+  // phone has more height than seven columns of width-limited cards can use, and the spare is
+  // left below the columns -- where a long column grows into it -- rather than opened up as a
+  // gulf between the deck and the tableau.
+  const rowGap = cardH * ROW_GAP
 
   const originY = cardH * PAD_Y
   const tableauY = originY + cardH + rowGap

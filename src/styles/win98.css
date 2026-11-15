@@ -321,15 +321,19 @@ body {
  *
  * What is left below is the part that does not follow from the type size. The menu bar and the
  * drop-downs still want a target rather larger than their text, but a smaller multiple of it
- * than before, so their padding comes down as the words grow into it.
+ * than before, so their padding comes down as the words grow into it. At the 17px floor both
+ * come out at 48px or more -- the size a thumb can hit without looking twice.
+ *
+ * `any-pointer` rather than `pointer`, because a phone with a stylus can report the pen as its
+ * primary pointer -- and would otherwise be handed the desktop's 11px shell for the finger.
  */
-@media (pointer: coarse) {
+@media (any-pointer: coarse) {
   :root {
-    --chrome-size: max(15px, calc(min(12.56vw, 170px) * 0.09));
+    --chrome-size: max(17px, calc(min(12.56vw, 170px) * 0.09));
   }
 
   .menubar__button {
-    padding: 0.6em 1.4em;
+    padding: 0.7em 1.4em;
   }
 
   .menu {
@@ -352,7 +356,7 @@ body {
  * the targets both stop lower -- still bigger than the mouse gets, still a row a thumb can
  * pick out, and the title and status bars are trimmed by the block further up as well.
  */
-@media (pointer: coarse) and (max-height: 520px) {
+@media (any-pointer: coarse) and (max-height: 520px) {
   :root {
     --chrome-size: max(13px, calc(min(12.56vw, 170px) * 0.09));
   }
