@@ -215,3 +215,15 @@ test('the Konami code skips to the win without touching the statistics', async (
   const stats = page.locator('dialog[open]')
   await expect(stats.locator('tr', { hasText: 'Games played' })).toContainText('0')
 })
+
+test('Escape stops the cascade and leaves the deal-again dialog up', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.card')).toHaveCount(52)
+
+  await nearlyWon(page)
+  await expect(page.locator('#board')).toHaveClass(/board--cascading/, { timeout: 5000 })
+
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#board')).not.toHaveClass(/board--cascading/)
+  await expect(page.locator('dialog[open]')).toContainText('You win')
+})

@@ -632,6 +632,9 @@ export function createApp() {
       event.preventDefault()
       undoMove()
     } else if (event.key === 'Escape' && cascade.running) {
+      // Stopping the cascade opens the deal-again dialog straight away; left uncancelled, this
+      // same keypress would go on to dismiss it as the dialog's close request.
+      event.preventDefault()
       cascade.stop()
     }
   })
