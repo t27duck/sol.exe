@@ -144,7 +144,7 @@ export function createCascade(canvas, boardElement) {
         y: card.y,
         // A wide spread of speeds, and some cards dropping rather than leaping off their
         // foundation, so no two cards bounce in step with each other.
-        vx: direction * (5 + Math.random() * 11) * scaleX,
+        vx: direction * (6 + Math.random() * 12) * scaleX,
         vy: (Math.random() * 12 - 9) * scaleY,
       })
     }
