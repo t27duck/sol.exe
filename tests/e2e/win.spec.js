@@ -186,3 +186,32 @@ test('undoing the move that won does not replay it', async ({ page }) => {
   expect(state.status).toBe('playing')
   expect(state.tableau[0].map((card) => card.id)).toEqual(['KD'])
 })
+
+test('the Konami code skips to the win without touching the statistics', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.card')).toHaveCount(52)
+
+  // Play a little first so there is something to reset.
+  const stock = await pilePoint(page, 'stock')
+  await page.mouse.click(stock.x, stock.y)
+  await expect.poll(async () => (await gameState(page)).moves).toBe(1)
+
+  const code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+  for (const key of [...code, 'ArrowLeft', 'ArrowRight', 'b', 'a']) await page.keyboard.press(key)
+
+  await expect(page.locator('#board')).toHaveClass(/board--cascading/, { timeout: 5000 })
+  const state = await gameState(page)
+  expect(state.status).toBe('won')
+  expect(state.score).toBe(0)
+  expect(state.moves).toBe(0)
+  expect(state.elapsed).toBe(0)
+
+  await page.locator('#board').click({ position: { x: 20, y: 20 } })
+  const dialog = page.locator('dialog[open]')
+  await expect(dialog).toContainText('You win')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+
+  await openMenuItem(page, 'Game', 'Statistics…')
+  const stats = page.locator('dialog[open]')
+  await expect(stats.locator('tr', { hasText: 'Games played' })).toContainText('0')
+})

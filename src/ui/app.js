@@ -11,6 +11,7 @@ import {
   createGame,
   autoFinishStep,
   draw,
+  forceWin,
   getPile,
   isStuck,
   move,
@@ -43,6 +44,20 @@ import { createCascade } from './winanim.js'
 
 /** How fast the auto-finish plays the last cards home. */
 const AUTO_FINISH_MS = 110
+
+/** Typing this anywhere wins the game on the spot, for watching the cascade without playing. */
+const KONAMI_CODE = [
+  'ArrowUp',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowLeft',
+  'ArrowRight',
+  'b',
+  'a',
+]
 
 export function createApp() {
   const elements = {
@@ -344,6 +359,20 @@ export function createApp() {
     apply()
   }
 
+  /** The Konami code's payoff: skip straight to the win, scored as a fresh, uncounted game. */
+  function cheatWin() {
+    stopAutoFinish()
+    cascade.stop()
+    drag.clearSelection()
+    forceWin(state)
+    // The game is left unstarted, which keeps it out of the statistics and the Vegas balance;
+    // marking it recorded makes sure of it.
+    recorded = true
+    celebrated = false
+    autoFinishHeld = null
+    apply()
+  }
+
   // --- dialogs ---------------------------------------------------------------------------
 
   async function openOptions() {
@@ -582,8 +611,19 @@ export function createApp() {
     },
   ])
 
+  /** @type {string[]} the most recent keys, as long as the Konami code */
+  const recentKeys = []
+
   document.addEventListener('keydown', (event) => {
     if (event.target instanceof HTMLInputElement) return
+
+    recentKeys.push(event.key.length === 1 ? event.key.toLowerCase() : event.key)
+    if (recentKeys.length > KONAMI_CODE.length) recentKeys.shift()
+    if (KONAMI_CODE.every((key, i) => recentKeys[i] === key)) {
+      recentKeys.length = 0
+      cheatWin()
+      return
+    }
 
     if (event.key === 'F2') {
       event.preventDefault()

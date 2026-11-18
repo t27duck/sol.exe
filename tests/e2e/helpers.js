@@ -76,6 +76,7 @@ export function gameState(page) {
       status: state.status,
       drawCount: state.drawCount,
       elapsed: state.elapsed,
+      moves: state.moves,
       stock: state.stock.length,
       waste: state.waste.map((card) => card.id),
       foundations: state.foundations.map((pile) => pile.map((card) => card.id)),

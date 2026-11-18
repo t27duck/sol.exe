@@ -10,6 +10,7 @@ import {
   createGame,
   displayScore,
   draw,
+  forceWin,
   getPile,
   isStuck,
   isWon,
@@ -362,5 +363,36 @@ describe('isStuck', () => {
     const state = emptyGame()
     state.tableau[0] = [up(13, 'S')]
     expect(isStuck(state)).toBe(true)
+  })
+})
+
+describe('forceWin', () => {
+  it('sends every card home in suit order and wipes what the player earned', () => {
+    const state = createGame({ gameNumber: 7, scoring: 'vegas', timed: true })
+    draw(state)
+    setElapsed(state, 45)
+    state.score = 123
+
+    forceWin(state)
+
+    expect(isWon(state)).toBe(true)
+    expect(state.status).toBe('won')
+    expect(state.stock).toEqual([])
+    expect(state.waste).toEqual([])
+    expect(state.tableau.every((column) => column.length === 0)).toBe(true)
+    for (const pile of state.foundations) {
+      expect(pile.map((card) => card.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+      expect(new Set(pile.map((card) => card.suit)).size).toBe(1)
+      expect(pile.every((card) => card.faceUp)).toBe(true)
+    }
+
+    expect(state.score).toBe(-52)
+    expect(state.elapsed).toBe(0)
+    expect(state.timePenaltyApplied).toBe(0)
+    expect(state.moves).toBe(0)
+    expect(state.passes).toBe(0)
+    expect(state.history).toEqual([])
+    expect(state.started).toBe(false)
+    expect(undo(state)).toBe(false)
   })
 })

@@ -3,7 +3,7 @@
  * change records how to undo itself -- including the exact number of points it awarded -- so
  * undo restores the score rather than trying to re-derive it.
  */
-import { deal, KING } from './deck.js'
+import { deal, KING, SUITS } from './deck.js'
 import { canPlaceOnFoundation, canStackOnTableau, isMovableRun } from './rules.js'
 import {
   allowedPasses,
@@ -414,6 +414,38 @@ export function undo(state) {
   state.score -= record.scoreDelta
   if (record.won) state.status = 'playing'
   return true
+}
+
+/**
+ * Debug shortcut: sends every card home and declares the game won, so the win animation can be
+ * seen without playing a hand. Everything the player earned is wiped -- score, clock, moves,
+ * history -- and the game is left "unstarted" so it never reaches the statistics or the Vegas
+ * balance.
+ * @param {GameState} state
+ */
+export function forceWin(state) {
+  const cards = [...state.stock, ...state.waste, ...state.foundations.flat(), ...state.tableau.flat()]
+  state.stock = []
+  state.waste = []
+  state.tableau = TABLEAU_IDS.map(() => [])
+  state.foundations = SUITS.map((suit) =>
+    cards
+      .filter((card) => card.suit === suit)
+      .sort((a, b) => a.rank - b.rank)
+      .map((card) => {
+        card.faceUp = true
+        return card
+      }),
+  )
+
+  state.score = startingScore(state.scoring)
+  state.passes = 0
+  state.elapsed = 0
+  state.timePenaltyApplied = 0
+  state.moves = 0
+  state.history = []
+  state.started = false
+  state.status = 'won'
 }
 
 /**
