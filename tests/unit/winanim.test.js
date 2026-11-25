@@ -11,6 +11,8 @@ function harness(count = 1) {
   let pending = null
   /** @type {{ x: number, y: number }[]} */
   const drawn = []
+  /** @type {{ x: number, y: number }[]} */
+  const cleared = []
 
   vi.stubGlobal('window', { devicePixelRatio: 1 })
   vi.stubGlobal('HTMLCanvasElement', class {})
@@ -24,6 +26,9 @@ function harness(count = 1) {
 
   const context = {
     setTransform() {},
+    clearRect(/** @type {number} */ x, /** @type {number} */ y) {
+      cleared.push({ x, y })
+    },
     drawImage(/** @type {unknown} */ _image, /** @type {number} */ x, /** @type {number} */ y) {
       drawn.push({ x, y })
     },
@@ -73,6 +78,12 @@ function harness(count = 1) {
     },
     /** Every card drawn so far, frame by frame. */
     drawn,
+    /** Draws of cards in flight, leaving out those painted resting on the foundation. */
+    get flights() {
+      return drawn.filter((at) => at.x !== 600 || at.y !== 50)
+    },
+    /** Every rectangle wiped back to the board beneath. */
+    cleared,
     /** Whether the cascade still has a frame queued. */
     get running() {
       return pending !== null
@@ -116,16 +127,17 @@ describe('the win cascade', () => {
     const cascade = harness(3)
     let frames = 0
     while (cascade.running && frames < 10000) {
-      const before = cascade.drawn.length
+      const before = cascade.flights.length
       cascade.tick(1000 / 60)
-      // One draw per frame means one card on the board at a time.
-      expect(cascade.drawn.length - before).toBeLessThanOrEqual(1)
+      // One draw in flight per frame means one card on the board at a time.
+      expect(cascade.flights.length - before).toBeLessThanOrEqual(1)
       frames++
     }
     expect(cascade.running).toBe(false)
 
-    // Each card starts from its foundation, so a jump back to x = 600 marks a new launch.
-    const launches = cascade.drawn.filter((at, index) => index === 0 || at.x > cascade.drawn[index - 1].x)
+    // Each card starts from its foundation, so a jump back towards x = 600 marks a new launch.
+    const flights = cascade.flights
+    const launches = flights.filter((at, index) => index === 0 || at.x > flights[index - 1].x)
     expect(launches).toHaveLength(3)
   })
 
@@ -135,5 +147,25 @@ describe('the win cascade', () => {
     const right = harness().run(1000 / 60, 200)
     expect(left.x).toBeLessThan(600)
     expect(right.x).toBeGreaterThan(600)
+  })
+
+  it('shows the card beneath on the foundation as each one leaves', () => {
+    const cascade = harness(3)
+    // Before anything moves, the top card is painted where it rests.
+    expect(cascade.drawn).toEqual([{ x: 600, y: 50 }])
+
+    cascade.tick(1000 / 60)
+    // The first launch uncovers the second card, painted in place under the one leaving.
+    expect(cascade.drawn.slice(1).filter((at) => at.x === 600 && at.y === 50)).toHaveLength(1)
+    expect(cascade.cleared).toHaveLength(0)
+
+    let frames = 0
+    while (cascade.running && frames < 10000) {
+      cascade.tick(1000 / 60)
+      frames++
+    }
+    // Three cards at rest in turn, then the last launch leaves the foundation empty.
+    expect(cascade.drawn.filter((at) => at.x === 600 && at.y === 50)).toHaveLength(3)
+    expect(cascade.cleared).toEqual([{ x: 600, y: 50 }])
   })
 })

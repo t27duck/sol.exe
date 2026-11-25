@@ -65,7 +65,11 @@ export function createCascade(canvas, boardElement) {
 
   /** @type {{ sprite: CanvasImageSource, x: number, y: number, vx: number, vy: number }[]} */
   let flying = []
-  /** @type {{ image: HTMLImageElement, x: number, y: number }[]} */
+  /**
+   * Cards still on their foundations, in launch order. `sprite` is filled in once the card has
+   * been painted at rest, so the same bitmap carries on into its flight.
+   * @type {{ image: HTMLImageElement, x: number, y: number, sprite?: CanvasImageSource }[]}
+   */
   let waiting = []
   let ratio = 1
 
@@ -114,6 +118,7 @@ export function createCascade(canvas, boardElement) {
     if (frame !== null) cancelAnimationFrame(frame)
     frame = null
     for (const card of flying) release(card.sprite)
+    for (const card of waiting) if (card.sprite) release(card.sprite)
     flying = []
     waiting = []
     // A stopped cascade should not go on holding a board-sized bitmap.
@@ -123,6 +128,29 @@ export function createCascade(canvas, boardElement) {
     const finished = onFinish
     onFinish = null
     finished?.()
+  }
+
+  /**
+   * Paints a waiting card where it rests on its foundation. The real cards are hidden while the
+   * cascade runs, so without this the foundations would look empty under the card leaving them.
+   * @param {CanvasRenderingContext2D} context
+   * @param {typeof waiting[number]} card
+   */
+  function paintAtRest(context, card) {
+    card.sprite ??= rasterise(card.image)
+    context.drawImage(card.sprite, card.x, card.y, cardW, cardH)
+  }
+
+  /**
+   * Shows what a launching card leaves behind: the next card down its foundation, or, once the
+   * foundation is spent, the empty pile outline the canvas covers.
+   * @param {CanvasRenderingContext2D} context
+   * @param {typeof waiting[number]} launched
+   */
+  function uncover(context, launched) {
+    const beneath = waiting.find((card) => card.x === launched.x && card.y === launched.y)
+    if (beneath) paintAtRest(context, beneath)
+    else context.clearRect(launched.x, launched.y, cardW, cardH)
   }
 
   /** @param {number} now */
@@ -137,9 +165,10 @@ export function createCascade(canvas, boardElement) {
     // One card at a time: the next leaves its foundation only once the last is off the board.
     if (flying.length === 0 && waiting.length > 0) {
       const card = /** @type {typeof waiting[number]} */ (waiting.shift())
+      uncover(context, card)
       const direction = Math.random() < RIGHT_CHANCE ? 1 : -1
       flying.push({
-        sprite: rasterise(card.image),
+        sprite: card.sprite ?? rasterise(card.image),
         x: card.x,
         y: card.y,
         // A wide spread of speeds, and some cards dropping rather than leaping off their
@@ -210,7 +239,15 @@ export function createCascade(canvas, boardElement) {
       if (!context) return
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
 
-      waiting = [...cards]
+      waiting = cards.map((card) => ({ ...card }))
+      // The top card of each foundation is the first one waiting at its position.
+      const painted = new Set()
+      for (const card of waiting) {
+        const key = `${card.x},${card.y}`
+        if (painted.has(key)) continue
+        painted.add(key)
+        paintAtRest(context, card)
+      }
       lastFrame = null
       boardElement.classList.add('board--cascading')
       frame = requestAnimationFrame(step)
