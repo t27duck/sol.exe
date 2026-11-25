@@ -99,6 +99,21 @@ export function createCascade(canvas, boardElement) {
     const context = sprite.getContext('2d')
     if (!context) return image
     context.drawImage(image, 0, 0, sprite.width, sprite.height)
+
+    // The board draws each card's black border outside the card, which this copy would lose,
+    // so trace it just inside the edge, with the same corner radius as `.card`.
+    const line = Math.max(1, Math.round(ratio))
+    context.strokeStyle = '#000000'
+    context.lineWidth = line
+    context.beginPath()
+    context.roundRect(
+      line / 2,
+      line / 2,
+      sprite.width - line,
+      sprite.height - line,
+      Math.max(0, cardW * 0.06 * ratio - line / 2),
+    )
+    context.stroke()
     return sprite
   }
 
