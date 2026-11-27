@@ -135,11 +135,28 @@ body {
   height: max(2px, 0.18em);
 }
 
-.titlebar__button--maximise::before {
-  inset: 0.18em;
+/*
+ * The window always fills the screen, so the middle button offers to restore it: two small
+ * windows, the front one down and to the left, painted in the face colour so it hides the
+ * corner of the one behind.
+ */
+.titlebar__button--restore::before,
+.titlebar__button--restore::after {
+  width: 0.55em;
+  height: 0.45em;
   border: 1px solid var(--dark);
   border-top-width: max(2px, 0.18em);
-  background: none;
+  background: var(--face);
+}
+
+.titlebar__button--restore::before {
+  top: 0.12em;
+  right: 0.22em;
+}
+
+.titlebar__button--restore::after {
+  bottom: 0.12em;
+  left: 0.22em;
 }
 
 .titlebar__button--close::before,
