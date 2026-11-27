@@ -157,15 +157,16 @@ export function createCascade(canvas, boardElement) {
   }
 
   /**
-   * Shows what a launching card leaves behind: the next card down its foundation, or, once the
-   * foundation is spent, the empty pile outline the canvas covers.
+   * Shows what a launching card leaves behind: the next card down its foundation. Once the
+   * foundation is spent nothing is wiped -- the last card's image stays as the start of its own
+   * trail, as everything else on the never-cleared canvas does, rather than punching a hole
+   * through to the empty pile beneath.
    * @param {CanvasRenderingContext2D} context
    * @param {typeof waiting[number]} launched
    */
   function uncover(context, launched) {
     const beneath = waiting.find((card) => card.x === launched.x && card.y === launched.y)
     if (beneath) paintAtRest(context, beneath)
-    else context.clearRect(launched.x, launched.y, cardW, cardH)
   }
 
   /** @param {number} now */

@@ -164,8 +164,9 @@ describe('the win cascade', () => {
       cascade.tick(1000 / 60)
       frames++
     }
-    // Three cards at rest in turn, then the last launch leaves the foundation empty.
+    // Three cards at rest in turn, and the last launch leaves its image behind rather than
+    // wiping back to the empty foundation.
     expect(cascade.drawn.filter((at) => at.x === 600 && at.y === 50)).toHaveLength(3)
-    expect(cascade.cleared).toEqual([{ x: 600, y: 50 }])
+    expect(cascade.cleared).toHaveLength(0)
   })
 })
